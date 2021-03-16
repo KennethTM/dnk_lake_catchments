@@ -8,13 +8,10 @@ dhym <- paste0(getwd(), "/data/dhym_rain.vrt")
 
 ids <- unique(basins_buffer$basin_id)
 
-#idx of largest area poly
-basins_buffer %>% 
-  mutate(area=as.numeric(st_area(GEOMETRY))) %>% 
-  arrange(desc(area)) %>% 
-  slice(1)
+library(mapview)
+mapview(basins_buffer)
 
-for(i in 325){
+for(i in 19){
   gdalwarp(srcfile = dhym,
            dstfile = paste0(flowdir_sub_path, "basin_", i, ".tif"),
            cutline = gis_database,
@@ -22,8 +19,17 @@ for(i in 325){
            cwhere = paste0("basin_id='", i, "'"),
            crop_to_cutline = TRUE,
            overwrite = TRUE,
+           dstnodata = -9999,
            co = c("COMPRESS=LZW", "BIGTIFF=YES"),
            tr = c(1.6, 1.6),
            multi = TRUE,
            wm = 4000)
+}
+
+for(i in 19){
+  rd_flowdir_call <- paste0(flowdir_sub_path, "rd_d8_flowdirs.exe ", 
+                            paste0(flowdir_sub_path, "basin_", i, ".tif"),
+                            " ",
+                            paste0(flowdir_sub_path, "basin_", i))
+  system(rd_flowdir_call)
 }
