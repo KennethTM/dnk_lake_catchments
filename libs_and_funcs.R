@@ -1,4 +1,4 @@
-library(sf);library(gdalUtils);library(tidyverse);library(lwgeom)
+library(sf);library(gdalUtils);library(tidyverse);library(lwgeom);library(fasterize);library(exactextractr)
 
 rawdata_path <- paste0(getwd(), "/rawdata/")
 

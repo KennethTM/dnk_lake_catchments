@@ -66,3 +66,25 @@ gdalbuildvrt(paste0("/vsizip/", dem_asc_files),
              allow_projection_difference = TRUE,
              a_srs = paste0("EPSG:", dk_epsg),
              )
+
+#Read soil and landcover layers and write to database
+soil_path <- paste0(rawdata_path, "Jordart_200000_Shape/jordart_200000_ids.shp")
+
+soil <- st_read(soil_path) %>%
+  st_transform(dk_epsg) %>%
+  set_names(str_to_lower(names(.)))
+
+soil %>%
+  st_write(gis_database, layer = "geus_soil", delete_layer = TRUE)
+
+clc_path <- paste0(rawdata_path, "DK_CORINE_SHP_UTM32-WGS84/CLC12_DK.shp")
+clc_legend <- read.csv(paste0(rawdata_path, "DK_CORINE_SHP_UTM32-WGS84/clc_legend.csv"), colClasses = "character")
+
+clc <- st_read(clc_path) %>%
+  st_transform(dk_epsg) %>%
+  left_join(clc_legend, by = c("CODE_12"="CLC_CODE")) %>% 
+  set_names(str_to_lower(names(.))) %>%
+  mutate(clc_code = parse_number(as.character(code_12)))
+
+clc %>%
+  st_write(gis_database, layer = "corine_land_cover", delete_layer = TRUE)
