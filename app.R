@@ -1,7 +1,6 @@
 library(shiny)
 library(leaflet)
 library(sf)
-library(tidyverse)
 
 ui <- bootstrapPage(
     tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
@@ -10,29 +9,39 @@ ui <- bootstrapPage(
 
 server <- function(input, output, session) {
     
-    #collect data in one .rds object or .sqlite database
-    basin_id <- 19
-    basins <- paste0(getwd(), "/data/basin_sub/basin_", basin_id, ".shp")
-    lakes <- paste0(getwd(), "/data/lakes_sub/basin_lakes_", basin_id, ".shp")
-    catchments <- paste0(getwd(), "/data/catchments_sub/basin_catchments_", basin_id, ".shp")
-    
-    basins_sf <- st_read(basins) %>% 
-        st_transform(4326)
-    
-    catchments_sf <- st_read(catchments) %>% 
-        mutate(area=as.numeric(st_area(geometry)),
-               circumference=as.numeric(st_length(st_cast(geometry, "LINESTRING"))),
-               label = paste0("Catchment area: ", round(area, 0), " m<sup>2</sup>", "<br>",
-                              "Catchment circumference: ", round(circumference, 0), " m")) %>% 
-        st_transform(4326)
-    
-    lakes_sf <- st_read(lakes) %>% 
-        filter(lake_id %in% catchments_sf$lake_id) %>% 
-        mutate(area=as.numeric(st_area(geometry)),
-               circumference=as.numeric(st_length(geometry)),
-               label = paste0("Lake area: ", round(area, 0), " m<sup>2</sup>", "<br>",
-                              "Lake circumference: ", round(circumference, 0), " m")) %>% 
-        st_transform(4326)
+    geo_list <- readRDS(paste0(getwd(), "/geo_list.rds"))
+
+    map_text <- tags$div(
+        HTML("<b>About</b>
+            <p>
+            Lake catchments in the Øresund region, Denmark:
+            <br>
+            <ul>
+            <li>Select a lake to show the catchment</li>
+            <li>Select a catchment to show land cover info</li>
+            </ul>
+            <em></em>
+            </p>
+            <br>
+            <p>
+            <em>Data based on a digital elevation model (1.6 m resolution)
+            <br>
+            and Corine Land Cover (2012). Polygons are simplied for 
+            <br>
+            viewing. Contact for national data and info.
+            </em>
+            </p>
+            <br>
+            <p>
+            <b>Contact</b>
+            <br>
+            Kenneth Thorø Martinsen
+            <br>
+            kenneth2810@gmail.com
+            <br>
+            <a href='www.datainwater.com'>www.datainwater.com</a>
+            </p>")
+    )
     
     output$map <- renderLeaflet({
         leaflet() %>% 
@@ -40,16 +49,17 @@ server <- function(input, output, session) {
             addMapPane("lakes", zIndex=420) %>% 
             addMapPane("catchment",zIndex=410) %>% 
             addMapPane("basin",zIndex=400) %>% 
-            addPolygons(data = basins_sf, fill = FALSE, color = "black", options = pathOptions(pane = "basin")) %>% 
-            addPolygons(data = lakes_sf, color = "blue", popup = ~label, layerId = ~lake_id, options = pathOptions(pane = "lakes"))
+            addControl(map_text, position = "topright") %>% 
+            addPolygons(data = geo_list$basins, fill = FALSE, color = gray(0.3), options = pathOptions(pane = "basin")) %>% 
+            addPolygons(data = geo_list$lakes, color = "cornflowerblue", popup = ~label, layerId = ~lake_id, options = pathOptions(pane = "lakes"))
     })
     
     observeEvent(input$map_shape_click, {
         id <- input$map_shape_click$id
-        catchments_sf_sub <- catchments_sf[catchments_sf$lake_id == id, ]
+        catchments_sub <- geo_list$catchments[geo_list$catchments$lake_id == id, ]
         
         leafletProxy('map') %>% 
-            addPolygons(data = catchments_sf_sub, color = "red", popup = ~label, group = "catch", options = pathOptions(pane = "catchment"))
+            addPolygons(data = catchments_sub, color = "blueviolet", popup = ~label, group = "catch", options = pathOptions(pane = "catchment"))
     })
     
     observeEvent(input$map_click, {

@@ -23,14 +23,22 @@ lakes <- st_read(gis_database, "lakes") %>%
   mutate(area=as.numeric(st_area(GEOMETRY)),
          label = paste0("Lake area: ", round(area, 0), " m<sup>2</sup>")) %>% 
   st_transform(4326) %>% 
-  select(label)
+  select(lake_id, label)
 
 basins <- st_read(gis_database, "basins") %>% 
   st_simplify(dTolerance=25, preserveTopology=TRUE) %>% 
   st_make_valid() %>% 
   st_cast("MULTIPOLYGON") %>% 
   st_transform(4326) %>% 
-  st_geometry()
+  select(basin_id) %>% 
+  filter(basin_id == 19)
+
+basins_buf <- basins %>% 
+  st_transform(dk_epsg) %>% 
+  st_buffer(500) %>% 
+  st_transform(4326) %>% 
+  st_cast("MULTIPOLYGON") %>% 
+  filter(basin_id == 19)
 
 #extract landuse
 clc <- st_read(gis_database, layer = "corine_land_cover")
@@ -97,7 +105,7 @@ clc_box <- data.frame(catch_id = catchments$catch_id, raster_clc_values) %>%
 catchments_with_cover <- catchments %>% 
   left_join(clc_box) %>% 
   mutate(label = paste0(area_label, "<br><br>", clc_label)) %>% 
-  select(label)
+  select(lake_id, label)
 
-geo_list <- list("catchments" = catchments_with_cover, "lakes" = lakes,"basins" = basins)
-saveRDS(geo_list, paste0(getwd(), "/data/geo_list.rds"))
+geo_list <- list("catchments" = catchments_with_cover, "lakes" = lakes,"basins" = basins, "basins_buf" = basins_buf)
+saveRDS(geo_list, paste0(getwd(), "/geo_list.rds"))
