@@ -39,7 +39,7 @@ server <- function(input, output, session) {
             <br>
             kenneth2810@gmail.com
             <br>
-            <a href='www.datainwater.com'>www.datainwater.com</a>
+            <a href='https://www.datainwater.com/'>www.datainwater.com</a>
             </p>")
     )
     
