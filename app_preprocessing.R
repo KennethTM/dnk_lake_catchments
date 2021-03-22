@@ -1,4 +1,5 @@
 source("libs_and_funcs.R")
+library(rmapshaper)
 
 #preprocessing of geodata for app
 
@@ -8,7 +9,8 @@ catchments_raw <- st_read(paste0(getwd(), "/data/catchments_sub/basin_catchments
 #st_write(catchments_raw, gis_database, "basin_catchments_19", delete_layer =  TRUE)
 
 catchments <- catchments_raw %>% 
-  st_simplify(dTolerance=2, preserveTopology=TRUE) %>% 
+  ms_simplify(keep_shapes = TRUE) %>% 
+  #st_simplify(dTolerance=2, preserveTopology=TRUE) %>% 
   st_make_valid() %>% 
   st_cast("MULTIPOLYGON") %>% 
   mutate(area=as.numeric(st_area(geometry)),
@@ -17,7 +19,8 @@ catchments <- catchments_raw %>%
 
 lakes <- st_read(gis_database, "lakes") %>% 
   filter(lake_id %in% catchments$lake_id) %>% 
-  st_simplify(dTolerance=2, preserveTopology=TRUE) %>% 
+  ms_simplify(keep_shapes = TRUE) %>% 
+  #st_simplify(dTolerance=2, preserveTopology=TRUE) %>% 
   st_make_valid() %>% 
   st_cast("POLYGON") %>% 
   mutate(area=as.numeric(st_area(GEOMETRY)),
@@ -26,7 +29,8 @@ lakes <- st_read(gis_database, "lakes") %>%
   select(lake_id, label)
 
 basins <- st_read(gis_database, "basins") %>% 
-  st_simplify(dTolerance=25, preserveTopology=TRUE) %>% 
+  ms_simplify(keep_shapes = TRUE) %>% 
+  #st_simplify(dTolerance=25, preserveTopology=TRUE) %>% 
   st_make_valid() %>% 
   st_cast("MULTIPOLYGON") %>% 
   st_transform(4326) %>% 
