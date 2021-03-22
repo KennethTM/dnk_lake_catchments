@@ -1,5 +1,15 @@
 source("libs_and_funcs.R")
 
+#dk border
+dk_border_raw <- raster::getData("GADM", country = "DNK", level = 0, path = rawdata_path)
+
+dk_border <- dk_border_raw %>%
+  st_as_sf() %>% 	
+  st_transform(dk_epsg)	
+
+dk_border %>% 
+  st_write(gis_database, layer = "dk_border", delete_layer = TRUE)
+
 #Read and clean rawdata files
 main_basins <- st_read(paste0(rawdata_path, "vp2b2013hovedvandoplande.shp"))
 
@@ -62,10 +72,24 @@ dem_asc_files <- sapply(dem_files, function(x){
 })
 
 gdalbuildvrt(paste0("/vsizip/", dem_asc_files), 
-             paste0(getwd(), "/data/dhym_rain.vrt"),
+             dhym,
              allow_projection_difference = TRUE,
              a_srs = paste0("EPSG:", dk_epsg),
              )
+
+#create national 10 m dem for basin delineation
+gdalwarp(srcfile = dhym,
+         dstfile = paste0(getwd(), "/data/dhym_10m.tif"),
+         cutline = gis_database,
+         cl = "dk_border",
+         crop_to_cutline = TRUE,
+         overwrite = TRUE,
+         dstnodata = -9999,
+         r = "min",
+         co = c("COMPRESS=LZW", "BIGTIFF=YES"),
+         tr = c(10, 10),
+         multi = TRUE,
+         wm = 4000)
 
 #Read soil and landcover layers and write to database
 soil_path <- paste0(rawdata_path, "Jordart_200000_Shape/jordart_200000_ids.shp")
