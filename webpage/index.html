@@ -11,16 +11,13 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
     integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
     crossorigin=""></script>
-    <script src="/js/leaflet-0.7.2/leaflet.ajax.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
     <title>Document</title>
 </head>
 <body>
-    <h1>Overskrift</h1>
-    <p>awdoinawdaio</p>
     <div id="mapid"></div>
     <script type="text/javascript">
-        	var map = L.map('mapid').setView([56.016, 12.386], 10);
+        	var map = L.map('mapid').setView([56, 12.4], 10);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -37,15 +34,21 @@
 
             var lakes = new L.GeoJSON.AJAX("lakes.geojson", 
             {
-                onEachFeature: function (feature, layer) {
+                onEachFeature: function (feature, layer){
                     layer.bindPopup(feature.properties.label);
                     layer.on("click",function(click){
+                        
                         var catchment_sub = new L.GeoJSON.AJAX("catchment.geojson",
                         {
                             filter: function(feat){if(feat.properties.lake_id == feature.properties.lake_id) return true},
                             style: catch_style,
                             onEachFeature: function(feature, layer){layer.bindPopup(feature.properties.label)}
                         });
+                        
+                        //catchment_sub = catchment.refilter(function(feat){
+                        //    return feat.properties.lake_id == feature.properties.lake_id;
+                        //});
+
                         featureGroup.addLayer(catchment_sub);
                         featureGroup.addTo(map);
                     });
@@ -58,6 +61,22 @@
             map.on('click', function(e){
                 featureGroup.clearLayers();
             });
+
+            L.Control.textbox = L.Control.extend({
+                onAdd: function(map) {
+                    
+                var text = L.DomUtil.create('div');
+                text.id = "info_text";
+                text.innerHTML = "<b>About</b><p>Danish lake catchments:<br><ul><li>Click a lake to show its catchment</li><li>Click a catchment to show land cover</li></ul><em></em></p><p><em>Data based on a digital elevation model (1.6 m)<br>and Corine Land Cover (2012). Polygons are <br> simplied for viewing. <br> Contact for national data and details.</em></p><p><b>Contact</b><br>Kenneth Thorø Martinsen<br>kenneth2810@gmail.com<br><a href='https://www.datainwater.com/'>www.datainwater.com</a></p>";
+                return text;
+                },
+
+                onRemove: function(map) {
+                    // Nothing to do here
+                }
+            });
+            L.control.textbox = function(opts) { return new L.Control.textbox(opts);}
+            L.control.textbox({ position: 'topright' }).addTo(map);
 
     </script>
 </body>
