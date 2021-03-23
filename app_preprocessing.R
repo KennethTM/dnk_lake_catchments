@@ -19,7 +19,7 @@ catchments <- catchments_raw %>%
 
 lakes <- st_read(gis_database, "lakes") %>% 
   filter(lake_id %in% catchments$lake_id) %>% 
-  ms_simplify(keep_shapes = TRUE) %>% 
+  #ms_simplify(keep_shapes = TRUE) %>% 
   #st_simplify(dTolerance=2, preserveTopology=TRUE) %>% 
   st_make_valid() %>% 
   st_cast("POLYGON") %>% 
