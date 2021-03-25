@@ -50,7 +50,13 @@ execGRASS("v.clean", flags = c("overwrite"),
 use_sf()
 grass_basins <- readVECT("dem_basins_clean") %>% 
   st_set_crs(dk_epsg) %>% 
-  mutate(basin_id = 1:n()) %>% 
-  select(basin_id)
+  mutate(basin_grass_id = 1:n()) %>% 
+  select(basin_grass_id)
 
-st_write(grass_basins, gis_database, layer = "grass_basins", delete_layer = TRUE)
+grass_basins_buffer <- grass_basins %>% 
+  st_buffer(500) %>% 
+  st_cast("MULTIPOLYGON") %>% 
+  st_make_valid()
+
+st_write(grass_basins, gis_database, layer = "basins_grass", delete_layer = TRUE)
+st_write(grass_basins_buffer, gis_database, layer = "basins_grass_buffer", delete_layer = TRUE)

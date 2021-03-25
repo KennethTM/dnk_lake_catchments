@@ -1,6 +1,8 @@
 import numpy as np
 import sys
 import rasterio as rio
+from shapely.geometry import shape
+from rasterio import features
 
 #Flowdirection maps
 #pysheds function need order:
@@ -17,6 +19,21 @@ richdemmap = (3, 4, 5, 6, 7, 8, 1, 2)
 #501
 #678
 taudemmap = (3, 2, 1, 8, 7, 6, 5, 4)
+
+def lake_catchment_delin(grid, grid_meta, poly, lake_id, basin_id, flowdirmap):
+  catch_id = lake_id + 888*10**8
+
+  target = features.rasterize([(poly, 1)], out_shape = grid.shape, transform = grid_meta["transform"])
+
+  catch = d8_catchment(target_grid = target, flowdir_grid = grid, flowdir_mapping = richdemmap, target_val = 1, recursionlimit = 5000)
+
+  catch_vect = features.shapes(catch, mask = (catch == 1), transform = grid_meta["transform"], connectivity=8)
+
+  geom, val = list(catch_vect)[0]
+
+  lake_catch_dict = {"basin_id": basin_id, "lake_id": lake_id, "catch_id": catch_id, "geometry": shape(geom)}
+
+  return(lake_catch_dict)
 
 #Modified from https://github.com/mdbartos/pysheds/blob/master/pysheds/grid.py
 def zero_rim(data, nodata=0):

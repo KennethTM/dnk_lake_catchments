@@ -10,57 +10,6 @@ dk_border <- dk_border_raw %>%
 dk_border %>% 
   st_write(gis_database, layer = "dk_border", delete_layer = TRUE)
 
-#Read and clean rawdata files
-main_basins <- st_read(paste0(rawdata_path, "vp2b2013hovedvandoplande.shp"))
-
-#main_basins_break <- main_basins %>% 
-#  st_cast("POLYGON")
-
-main_basins_clean <- main_basins %>% 
-  select(basin_name = PLANOPLAND) %>% 
-  mutate(basin_id = 1:n()) %>% 
-  st_zm() %>% 
-  st_transform(dk_epsg)
-
-main_basins_clean_buffer <- main_basins_clean %>% 
-  st_buffer(500) #%>% 
-  #st_cast("MULTIPOLYGON")
-
-lakes <- st_read(paste0(rawdata_path, "DK_StandingWater.gml"))
-
-lakes_clean <- lakes %>% 
-  select(lake_name = gml_id) %>% 
-  mutate(lake_id = 1:n()) %>% 
-  st_zm() %>% 
-  st_transform(dk_epsg)
-
-lakes_centroid_basins_id <- lakes_clean %>% 
-  st_centroid() %>% 
-  st_join(main_basins_clean) %>% 
-  st_drop_geometry()
-
-lakes_clean_basin_id <- lakes_clean %>% 
-  left_join(lakes_centroid_basins_id) %>% 
-  filter(!is.na(basin_id))
-
-#Write to database
-st_write(main_basins_clean, gis_database, "basins", delete_layer =  TRUE)
-st_write(main_basins_clean_buffer, gis_database, "basins_buffer", delete_layer = TRUE)
-st_write(lakes_clean_basin_id, gis_database, "lakes", delete_layer = TRUE)
-
-#Write lake and basin shapefiles to sub-folders
-basin_idx <- unique(lakes_clean_basin_id$basin_id)
-
-lapply(basin_idx, function(idx){
-  lakes_clean_basin_id %>% 
-    filter(basin_id == idx) %>% 
-    st_write(paste0(lakes_sub_path, "basin_lakes_", idx, ".shp"))
-  
-  main_basins_clean_buffer %>% 
-    filter(basin_id == idx) %>% 
-    st_write(paste0(basin_sub_path, "basin_", idx, ".shp"))
-})
-
 #Create vrt for hydro dem
 dem_files <- list.files(paste0(rawdata_path, "DHYM_RAIN"), pattern = "*.ZIP", full.names = TRUE)
 
@@ -75,7 +24,7 @@ gdalbuildvrt(paste0("/vsizip/", dem_asc_files),
              dhym,
              allow_projection_difference = TRUE,
              a_srs = paste0("EPSG:", dk_epsg),
-             )
+)
 
 #create national 10 m dem for basin delineation
 gdalwarp(srcfile = dhym,
@@ -90,6 +39,56 @@ gdalwarp(srcfile = dhym,
          tr = c(10, 10),
          multi = TRUE,
          wm = 4000)
+
+#Delineate grass basins (grass_gis.R script)
+
+#Read and clean vp2 basins
+main_basins <- st_read(paste0(rawdata_path, "vp2b2013hovedvandoplande.shp"))
+
+main_basins_clean <- main_basins %>% 
+  select(basin_name = PLANOPLAND) %>% 
+  mutate(basin_id = 1:n()) %>% 
+  st_zm() %>% 
+  st_transform(dk_epsg)
+
+main_basins_clean_buffer <- main_basins_clean %>% 
+  st_buffer(500) %>% 
+  st_cast("MULTIPOLYGON") %>% 
+  st_make_valid()
+
+st_write(main_basins_clean, gis_database, "basins_vp2", delete_layer =  TRUE)
+st_write(main_basins_clean_buffer, gis_database, "basins_vp2_buffer", delete_layer = TRUE)
+
+#Read grass basins
+basins_grass <- st_read(gis_database, layer = "basins_grass")
+
+#Read lake polygons
+lakes <- st_read(paste0(rawdata_path, "DK_StandingWater.gml"))
+
+lakes_clean <- lakes %>% 
+  select(lake_name = gml_id) %>% 
+  mutate(lake_id = 1:n()) %>% 
+  st_zm() %>% 
+  st_transform(dk_epsg)
+
+#Join basins ids to lakes
+lakes_centroid_basins_id <- lakes_clean %>% 
+  st_centroid() %>% 
+  st_join(main_basins_clean) %>% 
+  st_join(basins_grass) %>% 
+  st_drop_geometry()
+
+lakes_clean_basin_vp2_id <- lakes_clean %>% 
+  left_join(lakes_centroid_basins_id) %>% 
+  filter(!is.na(basin_id))
+
+lakes_clean_basin_grass_id <- lakes_clean %>% 
+  left_join(lakes_centroid_basins_id) %>% 
+  filter(!is.na(basin_grass_id))
+
+#Write to database
+st_write(lakes_clean_basin_vp2_id, gis_database, "lakes_vp2", delete_layer = TRUE)
+st_write(lakes_clean_basin_grass_id, gis_database, "lakes_grass", delete_layer = TRUE)
 
 #Read soil and landcover layers and write to database
 soil_path <- paste0(rawdata_path, "Jordart_200000_Shape/jordart_200000_ids.shp")
