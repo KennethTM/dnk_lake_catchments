@@ -27,20 +27,23 @@ system(taudem_flowdir)
 
 set.seed(99)
 taudem_lakes <- lakes_grass %>% 
+  filter(basin_grass_id == 8) %>% 
   sample_n(10)
 
 #Prepare lake boundary vectors for watershed delineation
 lake_boundary <- taudem_lakes %>% 
-  st_remove_holes() %>% 
-  select(basin_grass_id)
+  nngeo::st_remove_holes() %>% 
+  select(lake_id)
 
 st_write(lake_boundary, paste0(taudem_test_path, "lake_boundary.sqlite"), delete_dsn = TRUE)
+
+target_extent <- as.numeric(st_bbox(raster(dem_path)))
 
 #Rasterize lake boundaries
 gdal_rasterize(paste0(taudem_test_path, "lake_boundary.sqlite"),
                paste0(taudem_test_path, "lake_boundary.tif"),
-               a = "basin_grass_id", 
-               #te = target_extent,
+               a = "lake_id", 
+               te = target_extent,
                tr = c(1.6, 1.6), 
                co = "COMPRESS=LZW", 
                a_nodata = 0)
@@ -51,9 +54,9 @@ lake_boundary_pour_points <- rasterToPoints(lake_boundary_raster)
 
 lake_boundary_pour_points_sf <- st_as_sf(as.data.frame(lake_boundary_pour_points), 
                                          coords = c("x", "y"), crs = dk_epsg) %>% 
-  rename(basin_grass_id = lake_boundary)
+  rename(lake_id = lake_boundary)
 
-ids <- unique(taudem_lakes$basin_grass_id)
+ids <- unique(taudem_lakes$lake_id)
 
 for(i in ids){
   
@@ -61,8 +64,8 @@ for(i in ids){
   
   #Write lake boundary points to file
   lake_boundary_pour_points_sf %>%
-    filter(basin_grass_id == i) %>%
-    st_write(paste0(taudem_test_path, "boundary_id_", i, ".sqlite"))
+    filter(lake_id == i) %>%
+    st_write(paste0(taudem_test_path, "boundary_id_", i, ".sqlite"), delete_dsn = TRUE)
   
   #Delineate watershed draining to lake boundary points
   taudem_gage <- paste0(mpi_settings, taudem_path, "gagewatershed",
@@ -74,10 +77,40 @@ for(i in ids){
   polygonize <- paste0("pkpolygonize ",
                        " -i ", paste0(taudem_test_path, "watershed_id_", i, ".tif"),
                        " -m ", paste0(taudem_test_path, "watershed_id_", i, ".tif"),
-                       " -o ", paste0(taudem_test_path, "watershed_id_", x, ".sqlite"))
+                       " -o ", paste0(taudem_test_path, "watershed_id_", i, ".sqlite"))
   system(polygonize)
   
   file.remove(paste0(taudem_test_path, "boundary_id_", i, ".sqlite"))
   file.remove(paste0(taudem_test_path, "watershed_id_", i, ".tif"))
 }
 
+#Collect catchments
+lake_watershed_list <- lapply(ids, function(lake){
+  lake_path <- paste0(taudem_test_path, "watershed_id_", lake, ".sqlite")
+  
+  st_read(lake_path) %>% 
+    add_column(lake_id = lake)
+})
+
+#Union and clean catchment polygons
+lake_watershed_list_clean <- lapply(lake_watershed_list, function(sf){
+  sf %>% 
+    st_transform(dk_epsg) %>% 
+    st_make_valid() %>% 
+    st_union() %>% 
+    st_as_sf() %>% 
+    st_cast("POLYGON") %>% 
+    nngeo::st_remove_holes() %>% 
+    add_column(lake_id = sf$lake_id[1])
+  })
+
+#Bind catchment polygons
+lake_watershed_sf <- do.call(what = sf:::rbind.sf, args = lake_watershed_list_clean)
+
+#write for inspection
+st_write(lake_watershed_sf, paste0(taudem_test_path, "taudem_catchments.sqlite"))
+
+#write subset for comparison
+st_read(paste0(catchments_sub_path, "basin_catchments_8.shp")) %>% 
+  filter(lake_id %in% taudem_lakes$lake_id) %>% 
+  st_write(paste0(taudem_test_path, "python_catchments.sqlite"))
