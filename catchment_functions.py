@@ -3,6 +3,7 @@ import sys
 import rasterio as rio
 from shapely.geometry import shape
 from rasterio import features
+import catchment_cython
 
 #Flowdirection maps
 #pysheds function need order:
@@ -25,8 +26,9 @@ def lake_catchment_delin(grid, grid_meta, poly, lake_id, basin_id, flowdirmap):
 
   target = features.rasterize([(poly, 1)], out_shape = grid.shape, transform = grid_meta["transform"])
 
-  catch = d8_catchment(target_grid = target, flowdir_grid = grid, flowdir_mapping = richdemmap, target_val = 1, recursionlimit = 5000)
-
+  #catch = d8_catchment(target_grid = target, flowdir_grid = grid, flowdir_mapping = richdemmap, target_val = 1)
+  catch = catchment_cython.catchment_from_d8(target, grid)
+  
   catch_vect = features.shapes(catch, mask = (catch == 1), transform = grid_meta["transform"], connectivity=8)
 
   geom, val = list(catch_vect)[0]
@@ -50,6 +52,7 @@ def read_grid(grid_path):
     with rio.open(grid_path) as ds:
         grid = ds.read(1)
         grid_meta = ds.meta
+        grid[grid == 255] = 0
         
     zero_rim(grid)
     
@@ -102,7 +105,7 @@ def select_surround_ravel(i, shape):
 #     return outcatch
 
 # Implementation 2
-def d8_catchment(target_grid, flowdir_grid, flowdir_mapping, target_val = 1, recursionlimit = 1000):
+def d8_catchment(target_grid, flowdir_grid, flowdir_mapping, target_val = 1):
 
     pour_point = np.ravel_multi_index(np.where(target_grid == target_val), flowdir_grid.shape)
     flowdir_mapping_reorder = np.array(flowdir_mapping)[[4, 5, 6, 7, 0, 1, 2, 3]].tolist()

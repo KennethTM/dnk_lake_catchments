@@ -1,12 +1,12 @@
 import os
 from catchment_functions import *
 import geopandas as gp
+import time
 
 #loop over basins
 ids = list(range(112))[1:]
 
-####mangler at delineate for basin 18
-for i in ids[17:18]:
+for i in ids[7:8]: #[17:18]
   basin = str(i)
   
   #Paths to flowdir grid and lake shapefile
@@ -27,8 +27,8 @@ for i in ids[17:18]:
     lake_id = row["lake_id"]
     poly = row["geometry"]
     
-    if lake_id == 124679:
-      continue
+    #if lake_id == 124679:
+    #  continue
   
     try:
       print("Delineating catchment for lake_id {}: Lake {} of {} in basin {}...".format(lake_id, i, n_row, basin_id), flush=True)
@@ -39,6 +39,8 @@ for i in ids[17:18]:
       pass
   
   catch_geo = gp.GeoDataFrame(result_list, crs = grid_meta["crs"])
-  catch_geo.to_file(os.path.join(os.getcwd(), "data", "catchments_sub", "basin_catchments_"+basin+".shp"))
+  catch_geo.to_file(os.path.join(os.getcwd(), "data", "catchments_sub", "basin_catchments_"+basin+"_CYTHON.shp"))
+
 
 #Delineating catchment for lake_id 124679: Lake 1436 of 1686 in basin 18...
+#Delineating catchment for lake_id 127696: Lake 1468 of 1686 in basin 18...
