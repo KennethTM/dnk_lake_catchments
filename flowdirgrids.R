@@ -25,10 +25,8 @@ lapply(basin_ids, function(id){
     st_write(paste0(basin_sub_path, "basin_", id, ".shp"), delete_dsn = TRUE)
 })
 
-#[19:length(basin_ids)] TODO
-
 #Cut dems from buffered basin polygons
-for(i in basin_ids[6:18]){
+for(i in basin_ids){
   gdalwarp(srcfile = dhym,
            dstfile = paste0(flowdir_sub_path, "basin_", i, ".tif"),
            cutline = gis_database,
@@ -43,7 +41,11 @@ for(i in basin_ids[6:18]){
            wm = 6000)
 }
 
-for(i in basin_ids[6:18]){
+for(i in basin_ids){
+  if(file.exists(paste0(flowdir_sub_path, "basin_", i, "-breach-flowdirs-lzw.tif"))){
+    next
+  }
+  
   print("Breaching...")
   rd_breach_call <- paste0(flowdir_sub_path, "rd_depressions_breach.exe ",
                            paste0(flowdir_sub_path, "basin_", i, ".tif"),
@@ -61,14 +63,17 @@ for(i in basin_ids[6:18]){
   
 }
 
-for(i in basin_ids[6:18]){
+for(i in basin_ids){
   print("Compressing...")
   gdal_translate(src_dataset = paste0(flowdir_sub_path, "basin_", i, "-breach-flowdirs.tif"),
                  dst_dataset = paste0(flowdir_sub_path, "basin_", i, "-breach-flowdirs-lzw.tif"),
                  co = "COMPRESS=LZW")
   
   print("File cleanup...")
-  file.remove(paste0(flowdir_sub_path, "basin_", i, ".tif"),
-              paste0(flowdir_sub_path, "basin_", i, "-breach.tif"),
-              paste0(flowdir_sub_path, "basin_", i, "-breach-flowdirs.tif"))
+  if(file.exists(paste0(flowdir_sub_path, "basin_", i, "-breach-flowdirs-lzw.tif"))){
+    file.remove(paste0(flowdir_sub_path, "basin_", i, ".tif"),
+                paste0(flowdir_sub_path, "basin_", i, "-breach.tif"),
+                paste0(flowdir_sub_path, "basin_", i, "-breach-flowdirs.tif"))
+  }
 }
+
