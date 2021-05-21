@@ -6,10 +6,9 @@ from rasterio import features
 import catchment_cython
 import geopandas as gp
 import os
+from collections import deque
 
 #Flowdirection maps
-#pysheds function need order:
-#[N, NE, E, SE, S, SW, W, NW]
 
 #richdem flowcoordinate system
 #234
@@ -39,29 +38,22 @@ def basin_catchment_delin(basin_id):
   
   result_list = []
   
-  #i, row = next(iter(lake_shp[374:376].iterrows()))
-  for i, row in lake_shp.iterrows():
-    basin_id = row["bsn_gr_"] #basin_id
+  #(lake_shp[283:285])
+  for i, row in (lake_shp[0:5]).iterrows(): 
+    basin_id = row["bsn_gr_"]
     lake_id = row["lake_id"]
     poly = row["geometry"]
-    
-    #if lake_id == 124679:
-    #  continue
   
     try:
       print("Delineating catchment for lake_id {}: Lake {} of {} in basin {}...".format(lake_id, i, n_row, basin_id), flush=True)
-      result_dict = lake_catchment_delin(grid=grid, grid_meta=grid_meta, poly=poly, lake_id=lake_id, basin_id=basin_id, flowdirmap = richdemmap)
+      result_dict = lake_catchment_delin(grid=grid, grid_meta=grid_meta, poly=poly, lake_id=lake_id, basin_id=basin_id, flowdirmap=richdemmap)
       result_list.append(result_dict)
     except:
       print("Failed to delineate catchment for lake_id {}: Lake {} of {} in basin {}!".format(lake_id, i, n_row, basin_id), flush=True)
       pass
   
   catch_geo = gp.GeoDataFrame(result_list, crs = grid_meta["crs"])
-  catch_geo.to_file(os.path.join(os.getcwd(), "data", "catchments_sub", "basin_catchments_"+basin+"_CYTHON.shp"))
-  
-  #Delineating catchment for lake_id 124679: Lake 1436 of 1686 in basin 18...
-  #Delineating catchment for lake_id 127696: Lake 1468 of 1686 in basin 18...
-
+  catch_geo.to_file(os.path.join(os.getcwd(), "data", "catchments_sub", "basin_catchments_"+basin+".shp"))
 
 def lake_catchment_delin(grid, grid_meta, poly, lake_id, basin_id, flowdirmap):
   catch_id = lake_id + 888*10**8
@@ -69,11 +61,13 @@ def lake_catchment_delin(grid, grid_meta, poly, lake_id, basin_id, flowdirmap):
   target = features.rasterize([(poly, 1)], out_shape = grid.shape, transform = grid_meta["transform"], dtype = np.uint8)
 
   #catch = d8_catchment(target_grid = target, flowdir_grid = grid, flowdir_mapping = richdemmap, target_val = 1)
-  catch = catchment_cython.catchment_from_d8(target, grid) #using richdem map
-  
+  #catch = catchment_cython.catchment_from_d8(target, grid) #using richdem map #used for the first app. 80% of catchments
+  #catch = catchment_from_d8_bfs(target, grid) #using richdem map
+  catch = catchment_cython.catchment_from_d8_bfs(target, grid) 
+
   catch_vect = features.shapes(catch, mask = (catch == 1), transform = grid_meta["transform"], connectivity=8)
 
-  geom, val = list(catch_vect)[0]
+  geom, _ = list(catch_vect)[0]
 
   lake_catch_dict = {"basin_id": basin_id, "lake_id": lake_id, "catch_id": catch_id, "geometry": shape(geom)}
 
@@ -100,6 +94,33 @@ def read_grid(grid_path):
     
     return(grid, grid_meta)
 
+def catchment_from_d8_bfs(target, flowdir):
+
+  ys, xs = target.nonzero()
+  outlets = [[i, j] for i,j in zip(ys, xs)]
+  q = deque(outlets)
+
+  neighbor_idx = [[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]]
+  neighbor_dir = [5, 6, 7, 8, 1, 2, 3, 4]
+
+  while q:
+    y, x = q.popleft()
+
+    for i, fdir in zip(neighbor_idx, neighbor_dir):
+      dy, dx = i
+      next_y, next_x = y + dy, x + dx
+
+      if flowdir[next_y, next_x] == fdir and target[next_y, next_x] == 0:
+        target[next_y, next_x] = 1
+        q.append([next_y, next_x])
+
+  return(target)
+
+
+#write raster for debug
+#with rio.open("tmp_target2.tif", "w", **grid_meta) as ds:
+#tr  ds.write(target.astype(rio.uint8), 1)
+
 # def select_surround_ravel(i, shape):
 # 
 #     offset = shape[1]
@@ -112,6 +133,9 @@ def read_grid(grid_path):
 #                      i - 1 + offset,
 #                      i - 1 + 0,
 #                      i - 1 - offset]).T
+
+#pysheds function need order:
+#[N, NE, E, SE, S, SW, W, NW]
 
 # Implementation 1
 # def d8_catchment(target_grid, flowdir_grid, flowdir_mapping, target_val = 1, recursionlimit = 1000):
