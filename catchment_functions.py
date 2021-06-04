@@ -39,7 +39,8 @@ def basin_catchment_delin(basin_id):
   result_list = []
   
   #(lake_shp[283:285])
-  for i, row in (lake_shp[0:5]).iterrows(): 
+  #for i, row in (lake_shp[0:5]).iterrows(): 
+  for i, row in lake_shp.iterrows(): 
     basin_id = row["bsn_gr_"]
     lake_id = row["lake_id"]
     poly = row["geometry"]
