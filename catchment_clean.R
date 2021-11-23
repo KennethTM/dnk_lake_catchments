@@ -35,3 +35,5 @@ catch_all_clean <- do.call(rbind, catch_clean_list) %>%
 
 st_write(catch_all_clean, gis_database, "catch_all_simple", delete_layer = TRUE)
 
+#mapshaper cli
+#exactextract cli

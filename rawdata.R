@@ -10,7 +10,7 @@ dk_border <- dk_border_raw %>%
 dk_border %>% 
   st_write(gis_database, layer = "dk_border", delete_layer = TRUE)
 
-#Create vrt for hydro dem
+#Create vrt for hydro dem tiles (1.6 meter resolution)
 dem_files <- list.files(paste0(rawdata_path, "DHYM_RAIN"), pattern = "*.ZIP", full.names = TRUE)
 
 dem_asc_files <- sapply(dem_files, function(x){
@@ -23,7 +23,7 @@ dem_asc_files <- sapply(dem_files, function(x){
 gdalbuildvrt(paste0("/vsizip/", dem_asc_files), 
              dhym,
              allow_projection_difference = TRUE,
-             a_srs = paste0("EPSG:", dk_epsg),
+             a_srs = paste0("EPSG:", dk_epsg)
 )
 
 #create national 10 m dem for basin delineation
@@ -40,55 +40,21 @@ gdalwarp(srcfile = dhym,
          multi = TRUE,
          wm = 4000)
 
-#Delineate grass basins (grass_gis.R script)
+#DSM 10 m code missing!!
 
-#Read and clean vp2 basins
-main_basins <- st_read(paste0(rawdata_path, "vp2b2013hovedvandoplande.shp"))
+#label watersheds in 10 m dem using richdem functionality in "rd_label_watersheds.exe
+dhym_10m_breach <- paste(paste0(richdem_apps_path, "rd_depressions_breach.exe"),
+                         paste0(getwd(), "/data/dhym_10m.tif"),
+                         paste0(getwd(), "/data/dhym_10m_breach.tif"),
+                         "COMPLETE NOEPS NOFILL 0 0")
 
-main_basins_clean <- main_basins %>% 
-  select(basin_name = PLANOPLAND) %>% 
-  mutate(basin_id = 1:n()) %>% 
-  st_zm() %>% 
-  st_transform(dk_epsg)
+system(dhym_10m_breach)
 
-main_basins_clean_buffer <- main_basins_clean %>% 
-  st_buffer(500) %>% 
-  st_cast("MULTIPOLYGON") %>% 
-  st_make_valid()
+dhym_10m_labels <- paste(paste0(richdem_apps_path, "rd_label_watersheds.exe"),
+                         paste0(getwd(), "/data/dhym_10m_breach.tif"),
+                         paste0(getwd(), "/data/dhym_10m_labels.tif"))
 
-st_write(main_basins_clean, gis_database, "basins_vp2", delete_layer =  TRUE)
-st_write(main_basins_clean_buffer, gis_database, "basins_vp2_buffer", delete_layer = TRUE)
-
-#Read grass basins
-basins_grass <- st_read(gis_database, layer = "basins_grass")
-
-#Read lake polygons
-lakes <- st_read(paste0(rawdata_path, "DK_StandingWater.gml"))
-
-lakes_clean <- lakes %>% 
-  select(lake_name = gml_id) %>% 
-  mutate(lake_id = 1:n()) %>% 
-  st_zm() %>% 
-  st_transform(dk_epsg)
-
-#Join basins ids to lakes
-lakes_centroid_basins_id <- lakes_clean %>% 
-  st_centroid() %>% 
-  st_join(main_basins_clean) %>% 
-  st_join(basins_grass) %>% 
-  st_drop_geometry()
-
-lakes_clean_basin_vp2_id <- lakes_clean %>% 
-  left_join(lakes_centroid_basins_id) %>% 
-  filter(!is.na(basin_id))
-
-lakes_clean_basin_grass_id <- lakes_clean %>% 
-  left_join(lakes_centroid_basins_id) %>% 
-  filter(!is.na(basin_grass_id))
-
-#Write to database
-st_write(lakes_clean_basin_vp2_id, gis_database, "lakes_vp2", delete_layer = TRUE)
-st_write(lakes_clean_basin_grass_id, gis_database, "lakes_grass", delete_layer = TRUE)
+system(dhym_10m_labels)
 
 #Read soil and landcover layers and write to database
 soil_path <- paste0(rawdata_path, "Jordart_200000_Shape/jordart_200000_ids.shp")

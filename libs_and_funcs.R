@@ -3,6 +3,8 @@ library(rgrass7);library(link2GI)
 
 rawdata_path <- paste0(getwd(), "/rawdata/")
 
+richdem_apps_path <- paste0(getwd(), "/richdem_apps/")
+
 lakes_sub_path <- paste0(getwd(), "/data/lakes_sub/")
 basin_sub_path <- paste0(getwd(), "/data/basin_sub/")
 catchments_sub_path <- paste0(getwd(), "/data/catchments_sub/")
