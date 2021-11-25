@@ -6,7 +6,8 @@ from multiprocessing import Pool
 #loop over basins
 
 #all ids
-all_ids = list(range(112))[1:]
+basin_dir = os.path.join(os.getcwd(), "data", "flowdir_sub")
+all_ids = [int(i.split("-")[0].split("_")[-1]) for i in os.listdir(basin_dir)]
 
 #processed ids
 basin_dir = os.path.join(os.getcwd(), "data", "catchments_sub")
@@ -17,6 +18,8 @@ ids = [i for i in all_ids if i not in proc_ids]
 
 pool = Pool(processes=3)
 pool.imap_unordered(basin_catchment_delin, ids)
+
+#basin_catchment_delin(1170)
 
 '''
 #Test 

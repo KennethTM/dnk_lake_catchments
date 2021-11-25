@@ -26,7 +26,7 @@ gdalbuildvrt(paste0("/vsizip/", dem_asc_files),
              a_srs = paste0("EPSG:", dk_epsg)
 )
 
-#create national 10 m dem for basin delineation
+#create national 10 m dem for drainage basin delineation
 gdalwarp(srcfile = dhym,
          dstfile = paste0(getwd(), "/data/dhym_10m.tif"),
          cutline = gis_database,
