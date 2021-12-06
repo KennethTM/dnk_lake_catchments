@@ -19,7 +19,7 @@ ids = [i for i in all_ids if i not in proc_ids]
 pool = Pool(processes=3)
 pool.imap_unordered(basin_catchment_delin, ids)
 
-#basin_catchment_delin(1170)
+basin_catchment_delin(1190)
 
 '''
 #Test 

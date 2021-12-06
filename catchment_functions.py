@@ -50,16 +50,18 @@ def basin_catchment_delin(basin_id):
       print("Delineating catchment for lake_id {}: Lake {} of {} in basin {}...".format(lake_id, i+1, n_row, str(basin_id)), flush=True)
       result_dict = lake_catchment_delin(grid=grid, grid_meta=grid_meta, poly=poly, lake_id=lake_id, basin_id=basin_id, flowdirmap=richdemmap)
       #result_list.append(result_dict)
+
+      catch_geo = gp.GeoDataFrame([result_dict], crs = grid_meta["crs"])
+    
+      if not os.path.exists(catchment_path):
+        catch_geo.to_file(catchment_path)
+      else:
+        catch_geo.to_file(catchment_path, mode = "a")
+
     except:
       print("Failed to delineate catchment for lake_id {}: Lake {} of {} in basin {}!".format(lake_id, i+1, n_row, str(basin_id)), flush=True)
       pass
-  
-    catch_geo = gp.GeoDataFrame([result_dict], crs = grid_meta["crs"])
-    
-    if i == 0:
-      catch_geo.to_file(catchment_path)
-    else:
-      catch_geo.to_file(catchment_path, mode = "a")
+
 
 def lake_catchment_delin(grid, grid_meta, poly, lake_id, basin_id, flowdirmap):
   

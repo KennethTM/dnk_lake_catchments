@@ -1,39 +1,46 @@
 source("libs_and_funcs.R")
 library(rmapshaper)
 
-#lakes
+#Lakes
 lakes <- st_read(gis_database, "lakes_grass")
 lakes_gml_ids <- lakes %>% 
   st_drop_geometry() %>% 
-  select(gml_id = lake_name, lake_id, basin_id = basin_grass_id)
+  select(gml_id, lake_id, basin_id = basin_grass_id)
 
-#clean delineated catchments
+#Load and combine delineated catchments
 catchments_path <- list.files(paste0(getwd(), "/data/catchments_sub"), full.names = TRUE, pattern = "*.shp")
 
 catch_list <- lapply(catchments_path, st_read)
 
-#add gml_id and save raw catchments
+#Add gml_id, remove some duplicate rows and write to database
 catch_all <- do.call(rbind, catch_list) %>% 
   left_join(lakes_gml_ids) %>% 
-  arrange(basin_id, lake_id)
-  
-st_write(catch_all, gis_database, "catch_all_raw", delete_layer = TRUE)
+  filter(!duplicated(.)) %>% 
+  arrange(basin_id, lake_id) %>% 
+  st_make_valid() %>% 
+  st_cast("MULTIPOLYGON")
 
-#simplify, clean, add gml_id and save
-clean_and_simplify <- function(sf, keep){
-  sf %>% 
-    ms_simplify(keep_shapes = TRUE, keep = keep, sys = TRUE) %>% 
-    st_make_valid() %>% 
-    st_cast("MULTIPOLYGON")
-}
+st_write(catch_all, gis_database, "catchments_raw", delete_layer = TRUE)
 
-catch_clean_list <- lapply(catch_list, clean_and_simplify, keep = 0.1)
+# #Simplify and write to database
+# catch_all_simple <- catch_all %>% 
+#   ms_simplify(keep = 0.2, keep_shapes = TRUE, sys = TRUE) %>% 
+#   st_make_valid() %>% 
+#   st_cast("MULTIPOLYGON")
+# 
+# st_write(catch_all_simple, gis_database, "catchments_simple", delete_layer = TRUE)
 
-catch_all_clean <- do.call(rbind, catch_clean_list) %>%
-  left_join(lakes_gml_ids) %>%
-  arrange(basin_id, lake_id)
+#save shape, exec in cmd line
 
-st_write(catch_all_clean, gis_database, "catch_all_simple", delete_layer = TRUE)
+####
 
-#mapshaper cli
+
+lakes %>% 
+  filter(!(lake_id %in% catch_all$lake_id)) %>% 
+  st_write("lakes_not_delin.sqlite")
+
+#st_buffer
+
+#ms_erase for catchment and buffers
+
 #exactextract cli
