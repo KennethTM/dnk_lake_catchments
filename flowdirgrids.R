@@ -28,6 +28,7 @@ for(i in basin_ids){
   
   print(paste0("Basin ", i))
   
+  #cblend X pixels? test at rasters passer HELT sammen efter cut/crop operations
   gdalwarp(srcfile = dhym,
            dstfile = paste0(flowdir_sub_path, "basin_", i, ".tif"),
            cutline = gis_database,

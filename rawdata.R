@@ -1,7 +1,7 @@
 source("libs_and_funcs.R")
 
 #dk border
-dk_border_raw <- raster::getData("GADM", country = "DNK", level = 0, path = rawdata_path)
+dk_border_raw <- getData("GADM", country = "DNK", level = 0, path = rawdata_path)
 
 dk_border <- dk_border_raw %>%
   st_as_sf() %>% 	
@@ -40,7 +40,7 @@ gdalwarp(srcfile = dhym,
          multi = TRUE,
          wm = 4000)
 
-#DSM 10 m code missing!!
+#DSM/DTM 10 m code missing!!
 
 #label watersheds in 10 m dem using richdem functionality in "rd_label_watersheds.exe
 dhym_10m_breach <- paste(paste0(richdem_apps_path, "rd_depressions_breach.exe"),
@@ -66,6 +66,15 @@ soil <- st_read(soil_path) %>%
 soil %>%
   st_write(gis_database, layer = "geus_soil", delete_layer = TRUE)
 
+#Soil rasterize
+gdal_rasterize(src_datasource = gis_database,
+               dst_filename = paste0(rawdata_path, "geus_soil.tif"),
+               a = "tsym_id",
+               tr = c(100, 100),
+               co = "COMPRESS=LZW",
+               a_nodata = -9999,
+               l = "geus_soil")
+
 clc_path <- paste0(rawdata_path, "DK_CORINE_SHP_UTM32-WGS84/CLC12_DK.shp")
 clc_legend <- read.csv(paste0(rawdata_path, "DK_CORINE_SHP_UTM32-WGS84/clc_legend.csv"), colClasses = "character")
 
@@ -77,3 +86,54 @@ clc <- st_read(clc_path) %>%
 
 clc %>%
   st_write(gis_database, layer = "corine_land_cover", delete_layer = TRUE)
+
+#Corine land cover raster
+gdal_rasterize(src_datasource = gis_database,
+               dst_filename = paste0(rawdata_path, "corine_land_cover.tif"),
+               a = "clc_code",
+               tr = c(100, 100),
+               co = "COMPRESS=LZW",
+               a_nodata = -9999,
+               l = "corine_land_cover")
+
+#Warp worldclim annual temperature
+gdalwarp(paste0(rawdata_path, "wc2.0_bio_30s_01.tif"),
+         paste0(rawdata_path, "worldclim_airt.tif"), 
+         tr = c(900, 900),
+         t_srs = "EPSG:25832",
+         r = "bilinear",
+         te = target_extent,
+         overwrite = TRUE,
+         co = "COMPRESS=LZW",
+         dstnodata = -9999)
+
+#Warp worldclim annual precip
+gdalwarp(paste0(rawdata_path, "wc2.0_bio_30s_12.tif"),
+         paste0(rawdata_path, "worldclim_precip.tif"), 
+         tr = c(900, 900),
+         t_srs = "EPSG:25832",
+         r = "bilinear",
+         te = target_extent,
+         overwrite = TRUE,
+         co = "COMPRESS=LZW",
+         dstnodata = -9999)
+
+#Write streams to database
+ogr2ogr(paste0(rawdata_path, "DK_Watercourse.gml"),
+        gis_database,
+        nln = "streams",
+        update = TRUE,
+        overwrite = TRUE,
+        t_srs = paste0("EPSG:", dk_epsg),
+        dim = 2,
+        select = "gml_id")
+
+#Ice line
+ice_poly <- st_read(paste0(rawdata_path, "/Isrande/Isrand_poly.shp")) %>%
+  slice(1) %>%
+  st_transform(dk_epsg) %>%
+  st_crop(dk_border)
+
+ice_poly %>% 
+  st_write(gis_database, layer = "dk_iceage", delete_layer = TRUE)
+

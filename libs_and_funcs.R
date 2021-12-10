@@ -1,5 +1,5 @@
 library(raster);library(sf);library(gdalUtils);library(tidyverse);library(lwgeom);library(fasterize);library(exactextractr)
-library(rgrass7);library(link2GI)
+library(rgrass7);library(link2GI);library(rmapshaper);library(nngeo);library(exactextractr)
 
 rawdata_path <- paste0(getwd(), "/rawdata/")
 

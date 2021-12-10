@@ -73,6 +73,7 @@ def lake_catchment_delin(grid, grid_meta, poly, lake_id, basin_id, flowdirmap):
   #catch = catchment_cython.catchment_from_d8(target, grid) #using richdem map #used for the first app. 80% of catchments
   #catch = catchment_cython.catchment_from_d8_bfs(target, grid) 
   catch = catchment_from_d8_bfs(target, grid) #using richdem map
+  #numba solution med depth first search (recursion)?
 
   catch_vect = features.shapes(catch, mask = (catch == 1), transform = grid_meta["transform"], connectivity=8)
 
