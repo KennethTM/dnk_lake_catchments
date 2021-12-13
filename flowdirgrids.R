@@ -28,7 +28,6 @@ for(i in basin_ids){
   
   print(paste0("Basin ", i))
   
-  #cblend X pixels? test at rasters passer HELT sammen efter cut/crop operations
   gdalwarp(srcfile = dhym,
            dstfile = paste0(flowdir_sub_path, "basin_", i, ".tif"),
            cutline = gis_database,
@@ -39,8 +38,10 @@ for(i in basin_ids){
            dstnodata = -9999,
            co = c("COMPRESS=LZW", "BIGTIFF=YES"),
            tr = c(1.6, 1.6),
+           tap = TRUE,
            multi = TRUE,
-           wm = 6000)
+           wm = 8000,
+           wo = "NUM_THREADS=ALL_CPUS")
 }
 
 for(i in basin_ids){
@@ -77,3 +78,19 @@ for(i in basin_ids){
                 paste0(flowdir_sub_path, "basin_", i, "-breach-flowdirs.tif"))
   }
 }
+
+
+gdalwarp(srcfile = dhym,
+         dstfile = paste0("basin_47.tif"),
+         cutline = gis_database,
+         cl = "basins_grass_buffer",
+         cwhere = paste0("basin_grass_id='47'"),
+         crop_to_cutline = TRUE,
+         overwrite = TRUE,
+         dstnodata = -9999,
+         co = c("COMPRESS=LZW", "BIGTIFF=YES"),
+         tr = c(1.6, 1.6),
+         tap = TRUE,
+         multi = TRUE,
+         wm = 8000,
+         wo = "NUM_THREADS=ALL_CPUS")
