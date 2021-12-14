@@ -110,18 +110,23 @@ catch_stream_length <- catch_all_no_lake %>%
   summarise(catch_stream_length_m = sum(stream_length_m)) %>% 
   ungroup()
 
+#Lake-streams intersections
+lake_stream_intersect <- lakes %>% 
+  mutate(lake_stream_connect = lengths(st_intersects(GEOMETRY, streams))) %>% 
+  st_drop_geometry() %>%
+  select(basin_id, lake_id, gml_id, lake_stream_connect)
+
 #Collect/combine dataframes in list and save/write csv
 df_other <- lake_attr %>% 
   left_join(catch_attr) %>% 
   left_join(catch_lake_area) %>% 
   left_join(catch_stream_length) %>% 
+  left_join(lake_stream_intersect) %>% 
   mutate(catch_stream_length_m = ifelse(is.na(catch_stream_length_m), 0, catch_stream_length_m),
-         catch_lake_area_m2 = ifelse(is.na(catch_lake_area_m2), 0, catch_lake_area_m2))
+         catch_lake_area_m2 = ifelse(is.na(catch_lake_area_m2), 0, catch_lake_area_m2),
+         lake_catch_area_ratio = lake_area_m2/catch_area_m2)
 
 df_catch <- cbind(st_drop_geometry(catch_all_no_lake), topo_catch, clc_catch, soil_catch, climate_catch)
 
 all_features <- list("df_buffer_50" = df_buffer_50, "df_buffer_250" = df_buffer_250, "df_catch" = df_catch, "df_other" = df_other)
 saveRDS(all_features, paste0(getwd(), "/data/", "all_features.rds"))
-
-
-####250 buffer clc??

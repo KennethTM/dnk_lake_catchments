@@ -16,3 +16,5 @@ processed_catchments <- parse_number(list.files(catchments_sub_path, pattern = "
 
 dk_epsg <- 25832
 gis_database <- paste0(getwd(), "/data/gis_database.sqlite")
+
+response_vars <- c("alk", "chl_a", "color", "ph", "tn", "tp", "secchi", "pco2")

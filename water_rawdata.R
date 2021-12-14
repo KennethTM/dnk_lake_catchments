@@ -2,7 +2,7 @@
 
 source("libs_and_funcs.R")
 
-library(data.table);library(seacarb);library(zoo)
+library(data.table);library(seacarb);library(mgcv)
 
 #Lake chemistry, profile (water temperature) and secchi depth raw data 
 lake_chem <- read_excel(paste0(rawdata_path, "lake_chemistry_2000_2019.xlsx"))
@@ -99,37 +99,62 @@ lake_all_carb_gml <- lake_all_carb_sf %>%
 
 #Aggregate by lake polygons
 #Calculate monthly median across years
-#Interpolate between months to calculate annual mean for all variables
-lake_all_carb_agg <- lake_all_carb_gml[1:500,] %>% 
+lake_all_carb_agg <- lake_all_carb_gml %>% 
   mutate(month = month(date)) %>% 
-  select(-date) %>% 
-  group_by(gml_id, month) %>% 
-  summarise_all(~median(., na.rm = TRUE)) %>% 
-  right_join(expand.grid(gml_id = unique(.$gml_id),month = 1:12)) %>% 
-  arrange(gml_id, month) %>% 
-  mutate_at(vars(-group_cols()), ~na.approx(., na.rm = FALSE)) %>% 
-  mutate_at(vars(-group_cols()), ~na.locf(., na.rm = FALSE)) 
-  
+  select(-date, -wtr) %>% 
+  gather(variable, value, -gml_id, -month) %>% 
+  group_by(gml_id, variable,  month) %>% 
+  na.omit() %>% 
+  summarise(value_med = median(value)) %>% 
+  add_tally() %>% 
+  ungroup() %>% 
+  filter(n >= 4) %>% 
+  select(-n) %>% 
+  spread(variable, value_med) %>% 
+  mutate(gml_id = factor(gml_id))
 
-#   select(-site_id, -date, -dic, -co2, -elevation) %>% 
-#   gather(variable, value, -gml_id, -month) %>%
-#   na.omit() %>% 
-#   group_by(gml_id, variable, month) %>% 
-#   summarise(mean_month = mean(value)) %>% 
-#   summarise(mean = mean(mean_month), n = n()) %>% 
-#   ungroup() %>% 
-#   filter(n >= 3) %>% 
-#   select(-n) %>% 
-#   spread(variable, mean)
-# 
-# summary(lake_all_carb_agg)
-# 
-# #Add polygon features and write data to gis database
-# lake_all_carb_poly <- lake_all_carb_agg %>% 
-#   left_join(select(dk_lakes, gml_id, elevation)) %>% 
-#   mutate(gml_id_num = str_sub(gml_id, start=9)) %>% 
-#   st_as_sf() %>% 
-#   mutate(habitat = "lake") %>% 
-#   select(-gml_id)
-# 
-# st_write(lake_all_carb_poly, dsn = gis_database, layer = "lake_poly", delete_layer = TRUE)
+#Fit cyclic cubic spline models for each variable with "site" as random effect
+gam_list <- lapply(response_vars, function(var){
+  mod_form <- as.formula(paste0(var, "~s(month, bs='cc') + s(gml_id, bs='re')"))
+  mod <- bam(formula=mod_form, data=lake_all_carb_agg, discrete=TRUE)
+  return(mod)
+})
+names(gam_list) <- response_vars
+lapply(gam_list, summary)
+saveRDS(gam_list, paste0(getwd(), "/data/", "gam_list.rds"))
+
+#Create site by month grid
+month_grid <- expand.grid(gml_id = factor(unique(lake_all_carb_agg$gml_id)), month = 1:12)
+
+#Create predictions on grid for each variable
+pred_list <- lapply(gam_list, function(mod){
+  predict(mod, newdata=month_grid, discrete=FALSE)
+})
+names(pred_list) <- paste0(response_vars, "_interp")
+
+#Join predictions with grid
+month_grid_with_pred <- bind_cols(month_grid, pred_list)
+
+#Add predictions and fill NA values with predicted values
+#Replace negative (impossible values) with zeroes
+neg_replace <- function(x){ifelse(x < 0, 0, x)}
+
+lake_all_carb_interp <- lake_all_carb_agg %>%
+  right_join(month_grid_with_pred) %>%
+  arrange(gml_id, month) %>% 
+  mutate(alk_response = coalesce(alk, alk_interp),
+         chl_a_response = coalesce(chl_a, chl_a_interp),
+         color_response = coalesce(color, color_interp),
+         pco2_response = coalesce(pco2, pco2_interp),
+         ph_response = coalesce(ph, ph_interp),
+         secchi_response = coalesce(secchi, secchi_interp),
+         tn_response = coalesce(tn, tn_interp),
+         tp_response = coalesce(tp, tp_interp)) %>% 
+  mutate_at(vars(contains("_response")), ~neg_replace(.))
+
+#Calculate annual mean for each site
+lake_all_carb_mean <- lake_all_carb_interp %>% 
+  group_by(gml_id) %>% 
+  summarise_at(vars(contains("_response")), list(mean))
+
+saveRDS(lake_all_carb_mean, paste0(getwd(), "/data/", "response_df.rds"))
