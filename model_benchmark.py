@@ -58,6 +58,10 @@ xgb_tune = RandomizedSearchCV(xgb, xgb_param, n_iter = random_iters, cv = cv_inn
 
 estimator_list = [lm, lm_log, elastic_tune, knn_tune, rpart_tune, plsr_tune, mlp_tune, svm_tune, lgbm_tune, rf_tune, xgb_tune]
 
+
+
+#create dicts for results and coerce to data.frame
+
 response_results = []
 
 for response in response_vars[:1]:
@@ -82,3 +86,4 @@ for response in response_vars[:1]:
 
     response_results.append(estimator_results)
 
+results_df = pd.DataFrame.from_records(response_results)

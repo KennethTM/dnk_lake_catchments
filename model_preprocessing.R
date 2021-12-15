@@ -22,16 +22,18 @@ data_test <- testing(data_split)
 preproc_recipe <- recipe(alk + chl_a + color + ph + tn + tp + secchi + pco2 ~ . , data = data_train) %>% 
   step_impute_median(all_predictors()) %>% 
   step_zv(all_predictors()) %>% 
-  step_log(catch_lake_area_m2, catch_stream_length_m, base = 10, offset=1) %>% 
-  step_log(catch_area_m2, contains("_dist"), contains("_shoreline"), base = 10) %>% 
-  step_range(all_predictors())
+  #step_log(catch_lake_area_m2, catch_stream_length_m, base = 10, offset=1) %>% 
+  #step_log(catch_area_m2, contains("_dist"), contains("_shoreline"), base = 10) %>% 
+  #step_range(all_predictors()) %>% 
+  step_YeoJohnson(all_predictors(), -ice_covered) %>% 
+  step_scale(all_predictors(), -ice_covered, -contains("mean.clc"), -contains("mean.soil"))
 
 recipe_fit <- prep(preproc_recipe, training = data_train)
 
 data_train_preproc <- bake(recipe_fit, new_data = data_train)
 data_test_preproc <- bake(recipe_fit, new_data = data_test)
 
-# #Plot response variables
+#Plot response variables
 # data_train_preproc %>%
 #   select(all_of(response_vars)) %>%
 #   gather(variable, value) %>%
