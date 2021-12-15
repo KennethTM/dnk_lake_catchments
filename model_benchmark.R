@@ -42,7 +42,7 @@ for(i in response_vars_2){
   
   parallelStart(mode = "socket", cpus=8, mc.set.seed = TRUE, level = "mlr.resample")
   
-  benchmark_regr = benchmark(learners = lrn.list,
+  benchmark_regr = benchmark(learners = lrn.xgboost,
                              tasks = task_train,
                              resamplings = cv_outer,
                              measures = regr_measures,

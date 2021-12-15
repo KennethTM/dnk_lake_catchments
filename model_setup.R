@@ -25,7 +25,7 @@ regr_measures = list(rmse, rsq, mae, timeboth)
 
 #Define hyperparameter search spaces for model training
 ps.randomforest = makeParamSet(
-  makeIntegerParam("mtry", lower = 2, upper = ncol(data_train)), 
+  makeIntegerParam("mtry", lower = 2, upper = 50), 
   makeIntegerParam("num.trees", lower = 100, upper = 2000),
   makeNumericParam("sample.fraction", lower = 0.1, upper = 1),
   makeIntegerParam("min.node.size", lower = 1, upper = 20)
@@ -39,7 +39,7 @@ ps.rpart = makeParamSet(makeNumericParam("cp", lower = 0, upper = 1),
                         makeIntegerParam("minsplit", lower = 5, upper = 50))
 
 ps.nnet = makeParamSet(
-  makeIntegerParam("size", lower = 1, upper = 20),
+  makeIntegerParam("size", lower = 1, upper = 10),
   makeNumericParam("decay", lower = -5, upper = 1, trafo = function(x){10^x})
 )
 

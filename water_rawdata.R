@@ -110,13 +110,15 @@ lake_all_carb_agg <- lake_all_carb_gml %>%
   ungroup() %>% 
   filter(n >= 4) %>% 
   select(-n) %>% 
-  spread(variable, value_med) %>% 
+  #spread(variable, value_med) %>% 
   mutate(gml_id = factor(gml_id))
 
 #Fit cyclic cubic spline models for each variable with "site" as random effect
 gam_list <- lapply(response_vars, function(var){
-  mod_form <- as.formula(paste0(var, "~s(month, bs='cc') + s(gml_id, bs='re')"))
-  mod <- bam(formula=mod_form, data=lake_all_carb_agg, discrete=TRUE)
+  mod_df <- lake_all_carb_agg %>% 
+    filter(variable == var) %>% 
+    mutate(logp1_value_med = log10(value_med+1))
+  mod <- bam(logp1_value_med ~ s(month, bs='cc') + s(gml_id, bs='re'), data=mod_df, discrete=TRUE)
   return(mod)
 })
 names(gam_list) <- response_vars
@@ -130,31 +132,26 @@ month_grid <- expand.grid(gml_id = factor(unique(lake_all_carb_agg$gml_id)), mon
 pred_list <- lapply(gam_list, function(mod){
   predict(mod, newdata=month_grid, discrete=FALSE)
 })
-names(pred_list) <- paste0(response_vars, "_interp")
 
 #Join predictions with grid
-month_grid_with_pred <- bind_cols(month_grid, pred_list)
+#Back transform predictions to original scale
+#Replace negative (impossible values) with zeroes
+month_grid_with_pred <- bind_cols(month_grid, pred_list) %>% 
+  gather(variable, value_interp, -gml_id, -month) %>% 
+  mutate(value_interp = (10^value_interp) - 1,
+         value_interp = ifelse(value_interp < 0, 0, value_interp))
 
 #Add predictions and fill NA values with predicted values
-#Replace negative (impossible values) with zeroes
-neg_replace <- function(x){ifelse(x < 0, 0, x)}
-
 lake_all_carb_interp <- lake_all_carb_agg %>%
   right_join(month_grid_with_pred) %>%
   arrange(gml_id, month) %>% 
-  mutate(alk_response = coalesce(alk, alk_interp),
-         chl_a_response = coalesce(chl_a, chl_a_interp),
-         color_response = coalesce(color, color_interp),
-         pco2_response = coalesce(pco2, pco2_interp),
-         ph_response = coalesce(ph, ph_interp),
-         secchi_response = coalesce(secchi, secchi_interp),
-         tn_response = coalesce(tn, tn_interp),
-         tp_response = coalesce(tp, tp_interp)) %>% 
-  mutate_at(vars(contains("_response")), ~neg_replace(.))
+  mutate(value_fill = coalesce(value_med, value_interp))
 
 #Calculate annual mean for each site
 lake_all_carb_mean <- lake_all_carb_interp %>% 
-  group_by(gml_id) %>% 
-  summarise_at(vars(contains("_response")), list(mean))
+  group_by(gml_id, variable) %>% 
+  summarise(value_year = ifelse(sum(is.na(value_med)) >= 9, NA, mean(value_fill))) %>% 
+  spread(variable, value_year) %>% 
+  ungroup()
 
 saveRDS(lake_all_carb_mean, paste0(getwd(), "/data/", "response_df.rds"))
