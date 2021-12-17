@@ -10,7 +10,9 @@ data_raw <- response_df %>%
   left_join(all_features$df_buffer_250) %>% 
   left_join(all_features$df_catch) %>% 
   left_join(all_features$df_other) %>% 
-  select(-lake_id, -basin_id, -catch_id, -gml_id)
+  select(-lake_id, -basin_id, -catch_id, -gml_id) %>% 
+  mutate_at(vars(chl_a, color, ph, tn, tp, secchi, pco2), ~log10(.x)) %>% 
+  mutate_at(vars(alk), ~log(.x + 1))
 
 summary(data_raw)
 
@@ -21,19 +23,18 @@ data_test <- testing(data_split)
 
 preproc_recipe <- recipe(alk + chl_a + color + ph + tn + tp + secchi + pco2 ~ . , data = data_train) %>% 
   step_impute_median(all_predictors()) %>% 
-  step_zv(all_predictors()) %>% 
-  #step_log(catch_lake_area_m2, catch_stream_length_m, base = 10, offset=1) %>% 
-  #step_log(catch_area_m2, contains("_dist"), contains("_shoreline"), base = 10) %>% 
-  #step_range(all_predictors()) %>% 
+  step_nzv(all_predictors()) %>% 
   step_YeoJohnson(all_predictors(), -ice_covered) %>% 
-  step_scale(all_predictors(), -ice_covered, -contains("mean.clc"), -contains("mean.soil"))
+  step_scale(all_predictors(), -ice_covered)
 
 recipe_fit <- prep(preproc_recipe, training = data_train)
+
+saveRDS(recipe_fit, paste0(getwd(), "/data/", "preproc_recipe_fit.rds"))
 
 data_train_preproc <- bake(recipe_fit, new_data = data_train)
 data_test_preproc <- bake(recipe_fit, new_data = data_test)
 
-#Plot response variables
+# #Plot response variables
 # data_train_preproc %>%
 #   select(all_of(response_vars)) %>%
 #   gather(variable, value) %>%
@@ -50,5 +51,6 @@ data_test_preproc <- bake(recipe_fit, new_data = data_test)
 #   facet_wrap(variable~., scales = "free")
 
 #Save preprocessed data for modelling
-write_csv(data_train_preproc, paste0(getwd(), "/data/data_train_preproc.csv"))
-write_csv(data_test_preproc, paste0(getwd(), "/data/data_test_preproc.csv"))
+data_preproc <- list("train" = data_train_preproc, "test" = data_test_preproc)
+
+saveRDS(data_preproc, paste0(getwd(), "/data/data_preproc.rds"))

@@ -155,3 +155,7 @@ lake_all_carb_mean <- lake_all_carb_interp %>%
   ungroup()
 
 saveRDS(lake_all_carb_mean, paste0(getwd(), "/data/", "response_df.rds"))
+
+
+#check outlier lake with very high tn and tp - right unit?
+#catchments near german border

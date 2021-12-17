@@ -18,3 +18,13 @@ dk_epsg <- 25832
 gis_database <- paste0(getwd(), "/data/gis_database.sqlite")
 
 response_vars <- c("alk", "chl_a", "color", "ph", "tn", "tp", "secchi", "pco2")
+
+#Figure sizing. For most journals the figures should be 39 mm, 84 mm, 129 mm, or 174 mm wide and not higher than 234 mm.
+#ggplot theme
+theme_pub <- theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        axis.text = element_text(colour = "black"), 
+        panel.border = element_rect(fill = NA, colour = "black"),
+        strip.background = element_rect(fill = "white"))
+theme_set(theme_pub)

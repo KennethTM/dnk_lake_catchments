@@ -2,21 +2,22 @@
 
 source("libs_and_funcs.R")
 
-library(mlr)
+library(mlr);library(mlrMBO)
 
 #Load data
-data_train <- read_csv(paste0(getwd(), "/data/data_train_preproc.csv"))
-data_test <- read_csv(paste0(getwd(), "/data/data_test_preproc.csv"))
+data_preproc <- readRDS(paste0(getwd(), "/data/data_preproc.rds"))
+
+data_train <- data_preproc$train
+data_test <- data_preproc$test
 
 #Define resample for inner and outer loops
-cv_outer = makeResampleDesc("RepCV", folds = 5, reps = 5)
-#cv_outer = makeResampleDesc("CV", iters = 10)
+#cv_outer = makeResampleDesc("RepCV", folds = 10, reps = 2)
+cv_outer = makeResampleDesc("CV", iters = 10)
 cv_inner = makeResampleDesc("CV", iters = 5)
 
 #Tune method
 tune_random = makeTuneControlRandom(budget=25)
-
-#tune_mbo = makeTuneControlMBO(budget = 100)
+tune_mbo = makeTuneControlMBO(budget = 100)
 
 #Measures to report
 regr_measures = list(rmse, rsq, mae, timeboth)
@@ -33,15 +34,19 @@ ps.randomforest = makeParamSet(
 
 ps.fnn = makeParamSet(makeIntegerParam("k", lower = 1, upper = 100))
 
+ps.elastic = makeParamSet(makeNumericParam("alpha", lower = 0, upper = 1),
+                          makeNumericParam("s", lower = 0, upper = 500),
+                          makeNumericParam("lambda", lower = -10, upper = 10, trafo = function(x){2^x}))
+
 ps.rpart = makeParamSet(makeNumericParam("cp", lower = 0, upper = 1),
                         makeIntegerParam("maxdepth", lower = 3, upper = 30),
                         makeIntegerParam("minbucket", lower = 5, upper = 50),
                         makeIntegerParam("minsplit", lower = 5, upper = 50))
 
 ps.nnet = makeParamSet(
-  makeIntegerParam("size", lower = 1, upper = 20),
+  makeIntegerParam("size", lower = 2, upper = 15),
   makeNumericParam("decay", lower = -5, upper = 1, trafo = function(x){10^x}),
-  makeIntegerParam("maxit", lower = 100, upper = 500)
+  makeIntegerParam("maxit", lower = 100, upper = 1000)
 )
 
 ps.svm = makeParamSet(
