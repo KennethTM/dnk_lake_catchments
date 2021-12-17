@@ -2,7 +2,7 @@
 
 source("libs_and_funcs.R")
 
-library(scales);library(patchwork)
+library(scales);library(patchwork);library(RColorBrewer)
 
 #Figure 1 
 #Map showing Denmark and sites
@@ -119,10 +119,87 @@ ggsave(paste0(getwd(), "/manuscript/figures/figure_3.png"), figure_3, units = "m
 
 #Figure 4 
 #Density distributions of predicted values
+predict_all_df <- read_csv(paste0(getwd(), "/data/", "predict_all.csv"))
+
+figure_4 <- predict_all_df %>% 
+  select(-contains("_id")) %>% 
+  gather(variable, value) %>% 
+  ggplot(aes(value)) +
+  geom_density()+
+  facet_wrap(variable~., scales="free", ncol=2)+
+  ylab("Density")+
+  xlab(NULL)+
+  theme(strip.background = element_blank())
+  
+ggsave(paste0(getwd(), "/manuscript/figures/figure_4.png"), figure_4, units = "mm", width = 174, height = 200)
 
 #Figure 5
-#Partial dependence plots of the most important predictors
+#Variable importance plot
+model_results <- readRDS(paste0(getwd(), "/data/", "model_results.rds"))
+importance <- model_results$importance
+
+importance_df <- bind_rows(importance, .id = "response") %>% 
+  select(response, feature, importance) %>% 
+  group_by(response) %>% 
+  mutate(importance_normalized = (importance - min(importance))/(max(importance) - min(importance)))
+
+importance_cleaned <- importance_df %>% 
+  mutate(feature = gsub("mean.", "", feature),
+         feature = gsub("10m.", "", feature))
+
+figure_5 <- importance_cleaned %>% 
+  rename(Importance = importance_normalized) %>% 
+  ggplot(aes(x = factor(response), y=factor(reorder(feature, Importance)), fill=Importance))+
+  geom_tile()+
+  scale_x_discrete(expand = c(0,0))+
+  scale_fill_gradientn(colours = brewer.pal(9, "YlOrRd"))+
+  theme(legend.position = "top", legend.direction = "horizontal")+
+  guides(fill=guide_colorbar(title.position = "top", title.hjust = 0.5, barwidth = unit(82, "mm"), ticks=FALSE))+
+  ylab("Predictor variable")+
+  xlab("Response variable")
+
+ggsave(paste0(getwd(), "/manuscript/figures/figure_5.png"), figure_5, units = "mm", width = 129, height = 180)
 
 #Figure 6
-#Dimensionality reduction of the response varibles based on variable importance
+#Ale plots for ?? most important vars
+top_4_imp <- importance_df %>% 
+  group_by(response) %>% 
+  arrange(desc(importance)) %>% 
+  slice(1:4) %>% 
+  ungroup()
 
+ale <- model_results$ale
+ale_df <- bind_rows(lapply(model_results$ale, \(x){bind_rows(x)}), .id = "response")
+
+ale_df_top_4 <- top_4_imp %>% 
+  select(response, feature) %>% 
+  left_join(ale_df, by = c("response" = "response", "feature" =".feature"))
+
+figure_6 <- ale_df_top_4 %>% 
+  ggplot(aes(.borders, .value, col=feature))+
+  geom_line()+
+  facet_wrap(response~., scales="free", ncol=2)+
+  #ylab("Density")+
+  #xlab(NULL)+
+  theme(strip.background = element_blank())
+
+ggsave(paste0(getwd(), "/manuscript/figures/figure_6.png"), figure_6, units = "mm", width = 174, height = 200)
+
+#Figure 7
+#Dimensionality reduction of the response variables based on variable importance
+importance_wide <- importance_cleaned %>% 
+  ungroup() %>% 
+  select(-importance) %>% 
+  spread(feature, importance_normalized)
+
+pca_res <- prcomp(importance_wide[,-1], scale. = TRUE)
+
+pca_df <- data.frame(response = importance_wide$response, PC1 = pca_res$x[,1], PC2 = pca_res$x[,2])
+
+figure_7 <- pca_df %>% 
+  ggplot(aes(PC1, PC2, label=response))+
+  geom_text()+
+  xlab("1st principal component (36%)")+
+  ylab("2nd principal component (25%)")
+
+ggsave(paste0(getwd(), "/manuscript/figures/figure_7.png"), figure_7, units = "mm", width = 84, height = 84)

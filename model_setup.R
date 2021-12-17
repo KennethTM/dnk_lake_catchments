@@ -9,6 +9,7 @@ data_preproc <- readRDS(paste0(getwd(), "/data/data_preproc.rds"))
 
 data_train <- data_preproc$train
 data_test <- data_preproc$test
+data_recipe <- data_preproc$data_recipe
 
 #Define resample for inner and outer loops
 #cv_outer = makeResampleDesc("RepCV", folds = 10, reps = 2)
