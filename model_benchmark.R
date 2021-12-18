@@ -25,11 +25,10 @@ lrn.ranger = makeTuneWrapper("regr.ranger", resampling = cv_inner, par.set = ps.
 
 lrn.xgboost = makeTuneWrapper(makeLearner("regr.xgboost", nthread = 1), resampling = cv_inner, par.set = ps.xgboost, control = tune_random) 
 
-#lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.xgboost)
-lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr)
+lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.xgboost)
+#lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr)
 
 bmr_result_list <- list()
-
 
 #Training loop for lake data
 for(i in response_vars){
@@ -46,7 +45,7 @@ for(i in response_vars){
   
   parallelStart(mode = "socket", cpus=10, mc.set.seed = TRUE, level = "mlr.resample")
   
-  benchmark_regr = benchmark(learners = lrn.elastic,
+  benchmark_regr = benchmark(learners = lrn.list,
                              tasks = task_train,
                              resamplings = cv_outer,
                              measures = regr_measures,

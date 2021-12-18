@@ -17,7 +17,7 @@ cv_outer = makeResampleDesc("CV", iters = 10)
 cv_inner = makeResampleDesc("CV", iters = 5)
 
 #Tune method
-tune_random = makeTuneControlRandom(budget=25)
+tune_random = makeTuneControlRandom(budget=50)
 tune_mbo = makeTuneControlMBO(budget = 100)
 
 #Measures to report

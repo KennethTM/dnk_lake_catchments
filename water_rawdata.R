@@ -78,10 +78,16 @@ lake_carb_sub <- data.table("pco2" = lake_carb$pCO2)
 lake_all_carb <- cbind(lake_all, lake_carb_sub)
 
 #Filter observations and convert to spatial object
+#Remove 1 obs with wrong coordinate, and fix wrong values by removing or set to na:
+#fix unit for tn and tp (2 values), remove 1 low ph, or 0 values of secchi
 lake_all_carb_sf <- lake_all_carb %>%
   as_tibble() %>% 
-  mutate(alk = ifelse(alk > 20, NA, alk),
-         pco2 = ifelse(pco2 < 0 | ph < 5.4 | is.na(alk), NA, pco2)) %>% 
+  mutate(ph = ifelse(ph < 2, NA, ph),
+         alk = ifelse(alk > 20, NA, alk),
+         pco2 = ifelse(pco2 < 0 | ph < 5.4 | is.na(alk), NA, pco2),
+         tn = ifelse(tn > 1000, tn/1000, tn),
+         tp = ifelse(tp > 100, tp/1000, tp),
+         secchi = ifelse(secchi == 0, min(secchi[secchi != 0]), secchi)) %>% 
   filter(y_coord > 6*10^6) %>% 
   st_as_sf(coords=c("x_coord", "y_coord"), crs = dk_epsg)
 
@@ -154,8 +160,8 @@ lake_all_carb_mean <- lake_all_carb_interp %>%
   spread(variable, value_year) %>% 
   ungroup()
 
-saveRDS(lake_all_carb_mean, paste0(getwd(), "/data/", "response_df.rds"))
+saveRDS(lake_all_carb_mean, paste0(getwd(), "/data/", "response_vars.rds"))
 
 
-#check outlier lake with very high tn and tp - right unit?
+
 #catchments near german border

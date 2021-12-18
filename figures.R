@@ -4,9 +4,25 @@ source("libs_and_funcs.R")
 
 library(scales);library(patchwork);library(RColorBrewer)
 
+#Table 1
+#Table with response variable distributional characteristics
+table_1 <- response_df %>% 
+  select(-gml_id) %>% 
+  gather(variable, value) %>% 
+  na.omit() %>% 
+  group_by(variable) %>% 
+  summarise(min = min(value), q25 = quantile(value, 0.25), median = median(value), 
+            mean = mean(value), q75 = quantile(value, 0.75), max=max(value), n=n())
+
+write_csv(table_1, paste0(getwd(), "/manuscript/figures/table_1.csv"))
+
+#Table 2
+#Table with test set performance characteristics
+
+#Response, best model, mae, rmse, r2, n
+
 #Figure 1 
 #Map showing Denmark and sites
-
 response_df <- readRDS(paste0(getwd(), "/data/", "response_df.rds"))
 
 dk_border <- st_read(dsn = gis_database, layer = "dk_border") 
@@ -34,24 +50,8 @@ figure_1 <- ggplot()+
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_1.png"), figure_1, units = "mm", width = 129, height = 84)
 
-#Table 1
-#Table with response variable distributional characteristics
-table_1 <- response_df %>% 
-  select(-gml_id) %>% 
-  gather(variable, value) %>% 
-  na.omit() %>% 
-  group_by(variable) %>% 
-  summarise(min = min(value), q25 = quantile(value, 0.25), median = median(value), 
-            mean = mean(value), q75 = quantile(value, 0.75), max=max(value), n=n())
-
-write_csv(table_1, paste0(getwd(), "/manuscript/figures/table_1.csv"))
-
 #Figure 2
 #Lake and catchment area distributions
-#A - lake area
-#B - catch area
-#C - lake and catch area ratio
-
 all_features <- readRDS(paste0(getwd(), "/data/", "all_features.rds"))
 
 df_other <- all_features$df_other
@@ -88,7 +88,6 @@ ggsave(paste0(getwd(), "/manuscript/figures/figure_2.png"), figure_2, units = "m
 
 #Figure 3
 #Benchmark of learners
-
 model_bmr <- readRDS(paste0(getwd(), "/data/", "model_bmr.rds"))
 
 model_aggr_df <- lapply(model_bmr, \(x){x$aggr}) %>% 
@@ -119,7 +118,7 @@ ggsave(paste0(getwd(), "/manuscript/figures/figure_3.png"), figure_3, units = "m
 
 #Figure 4 
 #Density distributions of predicted values
-predict_all_df <- read_csv(paste0(getwd(), "/data/", "predict_all.csv"))
+predict_all_df <- read_csv(paste0(getwd(), "/data/", "all_predict.csv"))
 
 figure_4 <- predict_all_df %>% 
   select(-contains("_id")) %>% 

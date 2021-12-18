@@ -2,7 +2,7 @@ source("libs_and_funcs.R")
 
 library(rsample);library(recipes)
 
-response_df <- readRDS(paste0(getwd(), "/data/", "response_df.rds"))
+response_df <- readRDS(paste0(getwd(), "/data/", "response_vars.rds"))
 all_features <- readRDS(paste0(getwd(), "/data/", "all_features.rds"))
 
 data_raw <- response_df %>% 
@@ -12,7 +12,9 @@ data_raw <- response_df %>%
   left_join(all_features$df_other) %>% 
   select(-lake_id, -basin_id, -catch_id, -gml_id) %>% 
   mutate_at(vars(chl_a, color, ph, tn, tp, secchi, pco2), ~log10(.x)) %>% 
-  mutate_at(vars(alk), ~log10(.x + 1))
+  mutate_at(vars(alk), ~log10(.x + 1)) %>% 
+  rename(lake_stream_connect_n = lake_stream_connect) %>% 
+  mutate(lake_stream_connect = ifelse(lake_stream_connect_n == 0, 0, 1))
 
 summary(data_raw)
 
@@ -24,9 +26,10 @@ data_test <- testing(data_split)
 preproc_recipe <- recipe(alk + chl_a + color + ph + tn + tp + secchi + pco2 ~ . , data = data_train) %>% 
   step_impute_median(all_predictors()) %>% 
   step_nzv(all_predictors()) %>% 
-  step_YeoJohnson(all_predictors(), -ice_covered) %>% 
-  step_center(all_predictors(), -ice_covered) %>% 
-  step_scale(all_predictors(), -ice_covered)
+  step_sqrt(contains("mean.soil_"), contains("mean.clc_")) %>% 
+  step_YeoJohnson(all_predictors(), -contains("mean.soil_"), -contains("mean.clc_"), -ice_covered, -lake_stream_connect) %>% 
+  step_center(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
+  step_scale(all_predictors(), -ice_covered, -lake_stream_connect)
 
 recipe_fit <- prep(preproc_recipe, training = data_train)
 
@@ -41,7 +44,7 @@ data_test_preproc <- bake(recipe_fit, new_data = data_test)
 #   geom_histogram() +
 #   facet_wrap(variable~., scales = "free")
 # 
-# #Plot predictor variables
+#Plot predictor variables
 # data_train_preproc %>%
 #   select(-all_of(response_vars)) %>%
 #   gather(variable, value) %>%

@@ -100,4 +100,4 @@ predict_all_df <- bind_cols(predict_all) %>%
   mutate_at(dplyr::vars(alk), ~10^.x-1) %>% 
   relocate(contains("_id"))
 
-write_csv(predict_all_df, paste0(getwd(), "/data/", "predict_all.csv"))
+write_csv(predict_all_df, paste0(getwd(), "/data/", "all_predict"))
