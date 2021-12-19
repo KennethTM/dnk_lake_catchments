@@ -23,6 +23,9 @@ lrn.svm = makeTuneWrapper("regr.svm", resampling = cv_inner, par.set = ps.svm, c
 
 lrn.ranger = makeTuneWrapper("regr.ranger", resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
 
+#xgboost nthread=more? ranger num.threads
+#glmnet lambda vs s
+#stacked learner from 3 best or different learners, elastic, plsr, nnet, ranger
 lrn.xgboost = makeTuneWrapper(makeLearner("regr.xgboost", nthread = 1), resampling = cv_inner, par.set = ps.xgboost, control = tune_random) 
 
 lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.xgboost)
@@ -68,4 +71,4 @@ for(i in response_vars){
 
 saveRDS(bmr_result_list, paste0(getwd(), "/data/", "model_bmr.rds"))
 
-#getParamSet("regr.glmnet")
+#getParamSet("regr.ranger")
