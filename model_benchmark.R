@@ -17,19 +17,17 @@ lrn.rpart = makeTuneWrapper("regr.rpart", resampling = cv_inner, par.set = ps.rp
 
 lrn.plsr = makeTuneWrapper("regr.plsr", resampling = cv_inner, par.set = ps.plsr, control = tune_random) 
 
-lrn.nnet = makeTuneWrapper("regr.nnet", resampling = cv_inner, par.set = ps.nnet, control = tune_random)
+lrn.nnet = makeTuneWrapper(makeLearner("regr.nnet", maxit=500), resampling = cv_inner, par.set = ps.nnet, control = tune_random)
 
 lrn.svm = makeTuneWrapper("regr.svm", resampling = cv_inner, par.set = ps.svm, control = tune_random)
 
-lrn.ranger = makeTuneWrapper("regr.ranger", resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
+lrn.ranger = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
 
-#xgboost nthread=more? ranger num.threads
-#glmnet lambda vs s
-#stacked learner from 3 best or different learners, elastic, plsr, nnet, ranger
-lrn.xgboost = makeTuneWrapper(makeLearner("regr.xgboost", nthread = 1), resampling = cv_inner, par.set = ps.xgboost, control = tune_random) 
+lrn.xgboost = makeTuneWrapper(makeLearner("regr.xgboost", nthread=5), resampling = cv_inner, par.set = ps.xgboost, control = tune_random) 
 
-lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.xgboost)
-#lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr)
+lrn.stacked = makeStackedLearner(list(lrn.nnet, lrn.plsr, lrn.elastic, lrn.ranger), super.learner = "regr.lm", method = "stack.cv", resampling = makeResampleDesc("CV", iters = 5))
+
+lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.xgboost, lrn.stacked)
 
 bmr_result_list <- list()
 
@@ -46,7 +44,7 @@ for(i in response_vars){
   
   task_train <- makeRegrTask(data=data_train_var, target=i)
   
-  parallelStart(mode = "socket", cpus=10, mc.set.seed = TRUE, level = "mlr.resample")
+  parallelStart(mode = "socket", cpus=10, mc.set.seed = TRUE, level = "mlr.tuneParams")
   
   benchmark_regr = benchmark(learners = lrn.list,
                              tasks = task_train,
@@ -57,11 +55,9 @@ for(i in response_vars){
   
   parallelStop()
   
-  aggr_df <- getBMRAggrPerformances(benchmark_regr, as.df = TRUE) %>% 
-    mutate(response = i)
+  aggr_df <- getBMRAggrPerformances(benchmark_regr, as.df = TRUE)
   
-  resamples_df <- getBMRPerformances(benchmark_regr, as.df = TRUE) %>% 
-    mutate(response = i)
+  resamples_df <- getBMRPerformances(benchmark_regr, as.df = TRUE)
   
   print(aggr_df)
   
@@ -71,4 +67,4 @@ for(i in response_vars){
 
 saveRDS(bmr_result_list, paste0(getwd(), "/data/", "model_bmr.rds"))
 
-#getParamSet("regr.ranger")
+#getParamSet("regr.nnet")

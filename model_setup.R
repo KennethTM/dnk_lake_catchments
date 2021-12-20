@@ -13,11 +13,11 @@ data_recipe <- data_preproc$data_recipe
 
 #Define resample for inner and outer loops
 #cv_outer = makeResampleDesc("RepCV", folds = 10, reps = 2)
-cv_outer = makeResampleDesc("CV", iters = 10)
-cv_inner = makeResampleDesc("CV", iters = 5)
+cv_outer = makeResampleDesc("CV", iters = 5)
+cv_inner = makeResampleDesc("CV", iters = 4)
 
 #Tune method
-tune_random = makeTuneControlRandom(budget=25)
+tune_random = makeTuneControlRandom(budget = 30)
 tune_mbo = makeTuneControlMBO(budget = 100)
 
 #Measures to report
@@ -46,8 +46,7 @@ ps.rpart = makeParamSet(makeNumericParam("cp", lower = 0, upper = 1),
 
 ps.nnet = makeParamSet(
   makeIntegerParam("size", lower = 2, upper = 15),
-  makeNumericParam("decay", lower = -5, upper = 1, trafo = function(x){10^x}),
-  makeIntegerParam("maxit", lower = 100, upper = 1000)
+  makeNumericParam("decay", lower = -5, upper = 1, trafo = function(x){10^x})
 )
 
 ps.svm = makeParamSet(

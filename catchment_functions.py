@@ -1,4 +1,3 @@
-from numba.decorators import jit
 import numpy as np
 import sys
 import rasterio as rio
@@ -9,7 +8,7 @@ from rasterio import features
 import geopandas as gp
 import os
 from collections import deque
-from numba import jit
+from numba import njit
 
 #Flowdirection maps
 
@@ -191,7 +190,7 @@ def neighbor_ind(x, offset):
 
 #draft for vectorized function
 
-@jit
+@njit
 def catchment_from_d8_vec(target, flowdir):
 
   rows, cols = target.shape
