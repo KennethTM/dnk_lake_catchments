@@ -18,7 +18,7 @@ cv_inner = makeResampleDesc("CV", iters = 4)
 
 #Tune method
 tune_random = makeTuneControlRandom(budget = 30)
-tune_mbo = makeTuneControlMBO(budget = 100)
+tune_mbo = makeTuneControlMBO(budget = 30)
 
 #Measures to report
 regr_measures = list(rmse, rsq, mae, timeboth)
@@ -28,10 +28,11 @@ ps.randomforest = makeParamSet(
   makeIntegerParam("mtry", lower = 2, upper = 50), 
   makeIntegerParam("num.trees", lower = 100, upper = 2000),
   makeNumericParam("sample.fraction", lower = 0.1, upper = 1),
-  makeIntegerParam("min.node.size", lower = 1, upper = 20),
-  makeDiscreteParam("splitrule", c("variance","extratrees","maxstat")),
-  makeLogicalParam("replace", TRUE)
+  makeIntegerParam("min.node.size", lower = 1, upper = 20)
 )
+
+#makeDiscreteParam("splitrule", c("variance","extratrees","maxstat")),
+#makeLogicalParam("replace", TRUE)
 
 ps.fnn = makeParamSet(makeIntegerParam("k", lower = 1, upper = 100))
 

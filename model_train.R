@@ -7,8 +7,7 @@ source("model_setup.R")
 library(parallelMap);library(recipes);library(iml)
 
 #Create list with best learners for each response variable
-#lrn.ranger = makeTuneWrapper("regr.ranger", resampling = cv_inner, par.set = ps.randomforest, control = tune_mbo) 
-lrn.ranger = makeLearner("regr.ranger") 
+lrn.ranger = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
 
 best_models <- list("alk" = lrn.ranger, "chl_a" = lrn.ranger, "color" =lrn.ranger, "ph" = lrn.ranger,
                     "tn" = lrn.ranger, "tp" = lrn.ranger, "secchi" = lrn.ranger, "pco2" = lrn.ranger)
@@ -40,11 +39,11 @@ for(i in response_vars){
   task_test <- makeRegrTask(data=data_test_var, target=i)
   
   #Train model
-  #parallelStart(mode = "socket", cpus=10, mc.set.seed = TRUE, level = "mlr.tuneParams")
+  parallelStart(mode = "socket", cpus=10, mc.set.seed = TRUE, level = "mlr.tuneParams")
   
   fit <- mlr::train(best_models[[i]], task = task_train)
   
-  #parallelStop()
+  parallelStop()
   
   #Predict on test set
   pred <- predict(fit, task_test)
@@ -83,7 +82,9 @@ all_features <- readRDS(paste0(getwd(), "/data/", "all_features.rds"))
 data_all <- all_features$df_other %>% 
   left_join(all_features$df_buffer_50) %>% 
   left_join(all_features$df_buffer_250) %>% 
-  left_join(all_features$df_catch)
+  left_join(all_features$df_catch) %>% 
+  rename(lake_stream_connect_n = lake_stream_connect) %>% 
+  mutate(lake_stream_connect = ifelse(lake_stream_connect_n == 0, 0, 1))
 
 #Preproces data in the same way as for modeling
 data_all_preproc <- bake(data_recipe, new_data = data_all) %>% 
@@ -97,7 +98,7 @@ predict_all_df <- bind_cols(predict_all) %>%
   set_names(names(model_results$models)) %>% 
   bind_cols(dplyr::select(data_all, contains("id"))) %>% 
   mutate_at(dplyr::vars(chl_a, color, ph, tn, tp, secchi, pco2), ~10^.x) %>% 
-  mutate_at(dplyr::vars(alk), ~10^.x-1) %>% 
+  mutate_at(dplyr::vars(alk), ~(10^.x)-1) %>% 
   relocate(contains("_id"))
 
-write_csv(predict_all_df, paste0(getwd(), "/data/", "all_predict"))
+write_csv(predict_all_df, paste0(getwd(), "/data/", "all_predict.csv"))

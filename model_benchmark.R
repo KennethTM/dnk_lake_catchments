@@ -27,7 +27,7 @@ lrn.xgboost = makeTuneWrapper(makeLearner("regr.xgboost", nthread=5), resampling
 
 lrn.stacked = makeStackedLearner(list(lrn.nnet, lrn.plsr, lrn.elastic, lrn.ranger), super.learner = "regr.lm", method = "stack.cv", resampling = makeResampleDesc("CV", iters = 5))
 
-lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.xgboost, lrn.stacked)
+lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.stacked) #lrn.xgboost
 
 bmr_result_list <- list()
 
