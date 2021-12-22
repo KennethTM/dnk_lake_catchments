@@ -2,7 +2,7 @@
 
 source("libs_and_funcs.R")
 
-library(scales);library(patchwork);library(RColorBrewer)
+library(scales);library(patchwork);library(RColorBrewer);library(corrplot)
 
 response_df <- readRDS(paste0(getwd(), "/data/", "response_vars.rds"))
 model_results <- readRDS(paste0(getwd(), "/data/", "model_results.rds"))
@@ -21,8 +21,6 @@ table_1 <- response_df %>%
 table_1
 
 write_csv(table_1, paste0(getwd(), "/manuscript/figures/table_1.csv"))
-
-#CORRELATION BETWEEN RESPONSES
 
 #Table 2
 #Table with test set performance characteristics
@@ -82,7 +80,7 @@ figure_2_a <- df_other %>%
   geom_histogram(data = lake_obs_area, aes(y=..count.., fill="Lakes used in analysis"), binwidth = 0.5, col="black", alpha=0.5)+
   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x)),
-                expand = expansion(mult = c(0, .1)))+
+                expand = expansion(mult = c(0, 0.1)))+
   scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x)))+
   ylab("Count")+
@@ -126,13 +124,13 @@ figure_3 <- predict_all_df %>%
   select(-contains("_id")) %>% 
   gather(variable, value) %>% 
   ggplot(aes(value)) +
-  geom_freqpoly(aes(y=..count..), col="black", bins=50)+
+  geom_freqpoly(aes(y=..count..), col="black", bins=25)+
   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
                labels = trans_format("log10", math_format(10^.x)),
                expand = expansion(mult = c(0, .1)))+
   facet_wrap(variable~., scales="free", ncol=2)+
   ylab("Count")+
-  xlab(NULL)+
+  xlab(expression("Values"))+
   theme(strip.background = element_blank())
 
 figure_3
@@ -156,10 +154,10 @@ figure_4 <- importance_cleaned %>%
   rename(Importance = importance_normalized) %>% 
   ggplot(aes(x = factor(response), y=factor(reorder(feature, Importance)), fill=Importance))+
   geom_tile()+
-  scale_x_discrete(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0), position = "top")+
   scale_fill_gradientn(colours = brewer.pal(9, "YlOrRd"))+
-  theme(legend.position = "top", legend.direction = "horizontal")+
-  guides(fill=guide_colorbar(title.position = "top", title.hjust = 0.5, barwidth = unit(82, "mm"), ticks=FALSE))+
+  theme(legend.position = "bottom", legend.direction = "horizontal")+
+  guides(fill=guide_colorbar(title.position = "bottom", title.hjust = 0.5, barwidth = unit(82, "mm"), ticks=FALSE))+
   ylab("Predictor variable")+
   xlab("Response variable")
 
@@ -173,30 +171,32 @@ top_4_imp <- importance_df %>%
   group_by(response) %>% 
   arrange(desc(importance)) %>% 
   slice(1:4) %>% 
+  mutate(rank = factor(rank(-importance))) %>% 
   ungroup()
 
 ale <- model_results$ale
 ale_df <- bind_rows(lapply(model_results$ale, \(x){bind_rows(x)}), .id = "response")
 
 ale_df_top_4 <- top_4_imp %>% 
-  select(response, feature) %>% 
+  select(response, feature, rank) %>% 
   left_join(ale_df, by = c("response" = "response", "feature" =".feature"))
 
 ale_df_labels <- ale_df_top_4 %>% 
-  group_by(response, feature) %>% 
+  group_by(response, feature, rank) %>% 
   summarise(.borders = last(.borders), .value = last(.value))
 
 figure_5 <- ale_df_top_4 %>% 
-  ggplot(aes(.borders, .value, col=feature))+
+  ggplot(aes(.borders, .value, col=rank))+
   geom_line()+
-  geom_text(data = ale_df_labels, aes(label = feature), hjust=0)+ 
+  geom_text(data = ale_df_labels, aes(label = feature), hjust=0, show.legend = FALSE)+ 
   facet_wrap(response~., scales="free", ncol=2)+
-  scale_color_viridis_d()+
-  #ylab("Density")+
-  #xlab(NULL)+
-  theme(strip.background = element_blank())
-
-#COLOR BY IMPORTANCE RANK FOR EACH RESPONSE EXPAND X-AXIS
+  scale_color_brewer(palette = "Dark2")+
+  ylab(expression("Relative response (log"[10]~scale*")"))+
+  xlab("Scaled values")+
+  scale_x_continuous(expand = expansion(mult = c(0.1, 0.5)))+
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.1)))+
+  theme(strip.background = element_blank(), legend.position = "bottom")+
+  guides(color = guide_legend(title = "Ranked importance"))
 
 figure_5
 
@@ -210,18 +210,38 @@ importance_wide <- importance_cleaned %>%
   spread(feature, importance_normalized)
 
 pca_res <- prcomp(importance_wide[,-1], scale. = TRUE)
+summary(pca_res)
 
 pca_df <- data.frame(response = importance_wide$response, PC1 = pca_res$x[,1], PC2 = pca_res$x[,2])
 
 figure_6 <- pca_df %>% 
   ggplot(aes(PC1, PC2, label=response))+
   geom_text()+
-  xlab("1st principal component (36%)")+
-  ylab("2nd principal component (25%)")
+  xlab("1st principal component (45%)")+
+  ylab("2nd principal component (19%)")
+
+figure_6
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_6.png"), figure_6, units = "mm", width = 84, height = 84)
 
-#Supplementary figure 1
+#3D plot??
+# library(plot3D)
+# text3D(x = pca_res$x[,1], y = pca_res$x[,2], z = pca_res$x[,3], labels = importance_wide$response,
+#        theta = 45+90, phi=25, bty="b2", xlab = "PC 1 (45%)", ylab = "PC 2 (19%)", zlab = "PC 3 (10%)")
+
+#Supplementary figure S1
+response_df_cor <- response_df %>% 
+  select(-gml_id) %>% 
+  mutate_at(vars(chl_a, color, ph, tn, tp, secchi, pco2), ~log10(.x)) %>% 
+  mutate_at(vars(alk), ~log10(.x + 1))
+
+response_cor <- cor(response_df_cor, use = "pairwise.complete.obs")
+
+png(file = paste0(getwd(), "/manuscript/figures/figure_s1.png"), width = 129, height = 129, units = "mm", res=300)
+corrplot.mixed(response_cor, order = 'AOE')
+dev.off()
+
+#Supplementary figure 2
 #Benchmark of learners
 model_bmr <- readRDS(paste0(getwd(), "/data/model_bmr_211221.rds"))
 
@@ -238,7 +258,7 @@ model_aggr_df_clean <- model_aggr_df %>%
   group_by(response, variable) %>% 
   mutate(value_rank = rank(-value)) 
 
-figure_s1 <- model_aggr_df_clean %>% 
+figure_s2 <- model_aggr_df_clean %>% 
   ggplot(aes(reorder(model, value_rank), value))+
   geom_point()+
   geom_linerange(aes(ymin=0, ymax=value))+
@@ -249,6 +269,29 @@ figure_s1 <- model_aggr_df_clean %>%
   ylab("Score")+
   theme(strip.background = element_blank())
 
-figure_s1
+figure_s2
 
-ggsave(paste0(getwd(), "/manuscript/figures/figure_s1.png"), figure_s1, units = "mm", width = 174, height = 200)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_s2.png"), figure_s2, units = "mm", width = 174, height = 200)
+
+#Supplementary figure 3
+predictions <- model_results$predictions
+
+obs_pred_df <- lapply(predictions, \(x){x$data}) %>% 
+  bind_rows(.id = "variable") %>% 
+  as_tibble() %>% 
+  select(-id)
+
+figure_s3 <- obs_pred_df %>% 
+  ggplot(aes(truth, response))+
+  geom_abline(intercept = 0, slope=1, linetype=3)+
+  geom_point(shape=1, alpha=0.5)+
+  facet_wrap(variable~., scales="free", ncol=2)+
+  ylab(expression("Predicted (log"[10]~transformed*")"))+
+  xlab(expression("Observed (log"[10]~transformed*")"))+
+  theme(strip.background = element_blank())+
+  scale_x_continuous(expand = expansion(mult = c(0.3, 0.3)))+
+  scale_y_continuous(expand = expansion(mult = c(0.3, 0.3)))
+
+figure_s3
+
+ggsave(paste0(getwd(), "/manuscript/figures/figure_s3.png"), figure_s3, units = "mm", width = 129, height = 234)
