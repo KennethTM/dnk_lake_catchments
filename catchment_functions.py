@@ -31,8 +31,7 @@ def basin_catchment_delin(basin_id):
   #Paths to flowdir grid and lake shapefile
   flowdir_path = os.path.join(os.getcwd(), "data", "flowdir_sub", "basin_"+basin+"-breach-flowdirs-lzw.tif")
   lakes_path = os.path.join(os.getcwd(), "data", "lakes_sub", "basin_lakes_"+basin+".shp")
-  #catchment_path = os.path.join(os.getcwd(), "data", "catchments_sub", "basin_catchments_"+basin+".shp")
-  catchment_path = os.path.join(os.getcwd(), "data", "basin_catchments_"+basin+".shp")
+  catchment_path = os.path.join(os.getcwd(), "data", "catchments_sub", "basin_catchments_"+basin+".shp")
 
   grid, grid_meta = read_grid(flowdir_path)
   
@@ -40,19 +39,14 @@ def basin_catchment_delin(basin_id):
   
   n_row = len(lake_shp.index)
   
-  #result_list = []
-  
-  #(lake_shp[283:285])
-  for i, row in (lake_shp[0:5]).iterrows(): 
-  #for i, row in lake_shp.iterrows(): 
-    basin_id = row["bsn_gr_"]
+  for i, row in lake_shp.iterrows(): 
+    basin_id = row["basin_id"]
     lake_id = row["lake_id"]
     poly = row["geometry"]
   
     try:
       print("Delineating catchment for lake_id {}: Lake {} of {} in basin {}...".format(lake_id, i+1, n_row, str(basin_id)), flush=True)
       result_dict = lake_catchment_delin(grid=grid, grid_meta=grid_meta, poly=poly, lake_id=lake_id, basin_id=basin_id, flowdirmap=richdemmap)
-      #result_list.append(result_dict)
 
       catch_geo = gp.GeoDataFrame([result_dict], crs = grid_meta["crs"])
     
@@ -89,9 +83,6 @@ def lake_catchment_delin(grid, grid_meta, poly, lake_id, basin_id, flowdirmap):
 
   return(lake_catch_dict)
 
-
-
-
 '''
 def crop_catch(catch, grid_meta):
 
@@ -121,8 +112,6 @@ def bbox_from_mask(m):
     return (xmin, ymin, xmax, ymax)
 
 '''
-
-
 
 def zero_rim(data, nodata=0):
 
@@ -166,27 +155,6 @@ def catchment_from_d8_bfs(target, flowdir):
 
   return(target)
 
-
-
-
-
-'''
-def neighbor_ind(x, offset):
-
-  neighbor_idx = np.array([
-    x - 1 + 0,
-    x - 1 - offset,
-    x + 0 - offset,
-    x + 1 - offset,
-    x + 1 + 0,
-    x + 1 + offset,
-    x + 0 + offset,
-    x - 1 + offset
-  ])
-
-  return(neighbor_idx.T.flatten())
-
-'''
 
 #draft for vectorized function
 
