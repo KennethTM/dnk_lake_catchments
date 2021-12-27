@@ -9,11 +9,9 @@ dhym_labels_raster <- raster(dhym_10m_labels)
 #Find grass install
 grass_path <- findGRASS()
 
-link2GI::linkGRASS7(dhym_labels_raster,
-                    default_GRASS7 = grass_path,
-                    gisdbase = paste0(getwd(), "/grass_database"), 
-                    location = "dhym_10m",
-                    gisdbase_exist = TRUE)
+linkGRASS7(dhym_labels_raster, default_GRASS7 = grass_path,
+           gisdbase = paste0(getwd(), "/grass_database"), 
+           location = "dhym_10m", gisdbase_exist = TRUE)
 
 #Import dem
 execGRASS("r.in.gdal", flags = c("overwrite", "o"), parameters = list(input = dhym_10m_labels, output = "labels"))
@@ -35,12 +33,12 @@ execGRASS("v.clean", flags = c("overwrite"),
 use_sf()
 grass_basins <- readVECT("labels_clean") %>% 
   st_set_crs(dk_epsg) %>% 
-  mutate(basin_grass_id = 1:n()) %>% 
-  select(basin_grass_id) %>% 
+  mutate(basin_id = 1:n()) %>% 
+  select(basin_id) %>% 
   st_intersection(dk_border) %>% 
   st_cast("MULTIPOLYGON") %>%
   st_make_valid() %>% 
-  select(basin_grass_id)
+  select(basin_id)
 
 #Missing danish islands due to erased polygons
 grass_basins_union <- st_union(grass_basins)
@@ -50,7 +48,7 @@ dk_border_split <- dk_border %>%
   st_cast("POLYGON")
 
 dk_border_missing <- dk_border_split[grass_basins_union, , op = st_disjoint] %>% 
-  mutate(basin_grass_id = 1000+(1:n())) %>% 
+  mutate(basin_id = 1000+(1:n())) %>% 
   rename(geom = GEOMETRY) %>% 
   st_cast("MULTIPOLYGON")
 
@@ -60,7 +58,7 @@ grass_basins_buffer <- grass_basins %>%
   st_intersection(dk_border) %>% 
   st_cast("MULTIPOLYGON") %>%
   st_make_valid() %>% 
-  select(basin_grass_id)
+  select(basin_id)
 
 grass_basins_all <- rbind(grass_basins, dk_border_missing)
 grass_basins_buffer_all <- rbind(grass_basins_buffer, dk_border_missing)
@@ -83,17 +81,9 @@ lakes_centroid_basins_id <- lakes_clean %>%
   st_join(grass_basins_all) %>%
   st_drop_geometry()
 
-lakes_clean_basin_grass_id <- lakes_clean %>%
+lakes_clean_basin_id <- lakes_clean %>%
   left_join(lakes_centroid_basins_id) %>%
-  filter(!is.na(basin_grass_id))
+  filter(!is.na(basin_id))
 
 #Write to database
-st_write(lakes_clean_basin_grass_id, gis_database, "lakes_grass", delete_layer = TRUE)
-
-
-
-
-# missing_lakes <-lakes_clean %>%
-#   left_join(lakes_centroid_basins_id) %>%
-#   filter(is.na(basin_grass_id))
-# mapview::mapview(missing_lakes)
+st_write(lakes_clean_basin_id, gis_database, "lakes_grass", delete_layer = TRUE)

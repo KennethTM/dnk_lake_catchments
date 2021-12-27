@@ -42,7 +42,7 @@ gdalwarp(srcfile = dhym,
 
 #DSM/DTM 10 m code missing!!
 
-#label watersheds in 10 m dem using richdem functionality in "rd_label_watersheds.exe
+#Breaching 10 m dem 
 dhym_10m_breach <- paste(paste0(richdem_apps_path, "rd_depressions_breach.exe"),
                          paste0(getwd(), "/data/dhym_10m.tif"),
                          paste0(getwd(), "/data/dhym_10m_breach.tif"),
@@ -50,6 +50,7 @@ dhym_10m_breach <- paste(paste0(richdem_apps_path, "rd_depressions_breach.exe"),
 
 system(dhym_10m_breach)
 
+#Label watersheds in 10 m dem using richdem functionality in "rd_label_watersheds.exe
 dhym_10m_labels <- paste(paste0(richdem_apps_path, "rd_label_watersheds.exe"),
                          paste0(getwd(), "/data/dhym_10m_breach.tif"),
                          paste0(getwd(), "/data/dhym_10m_labels.tif"))
@@ -136,4 +137,3 @@ ice_poly <- st_read(paste0(rawdata_path, "/Isrande/Isrand_poly.shp")) %>%
 
 ice_poly %>% 
   st_write(gis_database, layer = "dk_iceage", delete_layer = TRUE)
-
