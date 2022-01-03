@@ -163,5 +163,5 @@ lake_all_carb_mean <- lake_all_carb_interp %>%
 saveRDS(lake_all_carb_mean, paste0(getwd(), "/data/", "response_vars.rds"))
 
 
-
+#do not remove negative response vals
 #catchments near german border
