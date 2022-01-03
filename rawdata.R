@@ -45,17 +45,29 @@ gdalwarp(srcfile = dhym,
 #Breaching 10 m dem 
 dhym_10m_breach <- paste(paste0(richdem_apps_path, "rd_depressions_breach.exe"),
                          paste0(getwd(), "/data/dhym_10m.tif"),
-                         paste0(getwd(), "/data/dhym_10m_breach.tif"),
+                         paste0(getwd(), "/data/dhym_10m_breach_raw.tif"),
                          "COMPLETE NOEPS NOFILL 0 0")
 
 system(dhym_10m_breach)
 
+gdal_translate(paste0(getwd(), "/data/dhym_10m_breach_raw.tif"),
+               paste0(getwd(), "/data/dhym_10m_breach.tif"),
+               co = "COMPRESS=LZW")
+
+file.remove(paste0(getwd(), "/data/dhym_10m_breach_raw.tif"))
+
 #Label watersheds in 10 m dem using richdem functionality in "rd_label_watersheds.exe
 dhym_10m_labels <- paste(paste0(richdem_apps_path, "rd_label_watersheds.exe"),
                          paste0(getwd(), "/data/dhym_10m_breach.tif"),
-                         paste0(getwd(), "/data/dhym_10m_labels.tif"))
+                         paste0(getwd(), "/data/dhym_10m_labels_raw.tif"))
 
 system(dhym_10m_labels)
+
+gdal_translate(paste0(getwd(), "/data/dhym_10m_labels_raw.tif"),
+               paste0(getwd(), "/data/dhym_10m_labels.tif"),
+               co = "COMPRESS=LZW")
+
+file.remove(paste0(getwd(), "/data/dhym_10m_labels_raw.tif"))
 
 #Read soil and landcover layers and write to database
 soil_path <- paste0(rawdata_path, "Jordart_200000_Shape/jordart_200000_ids.shp")
