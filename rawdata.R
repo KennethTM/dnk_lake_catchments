@@ -1,7 +1,7 @@
 source("libs_and_funcs.R")
 
 #dk border
-dk_border_raw <- getData("GADM", country = "DNK", level = 0, path = rawdata_path)
+dk_border_raw <- raster::getData("GADM", country = "DNK", level = 0, path = rawdata_path)
 
 dk_border <- dk_border_raw %>%
   st_as_sf() %>% 	

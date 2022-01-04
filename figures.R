@@ -6,6 +6,7 @@ library(scales);library(patchwork);library(RColorBrewer);library(corrplot)
 
 response_df <- readRDS(paste0(getwd(), "/data/", "response_vars.rds"))
 model_results <- readRDS(paste0(getwd(), "/data/", "model_results.rds"))
+all_features <- readRDS(paste0(getwd(), "/data/", "all_features.rds"))
 
 #Table 1
 #Table with response variable distributional characteristics
@@ -64,8 +65,6 @@ ggsave(paste0(getwd(), "/manuscript/figures/figure_1.png"), figure_1, units = "m
 
 #Figure 2
 #Lake and catchment area distributions
-all_features <- readRDS(paste0(getwd(), "/data/", "all_features.rds"))
-
 df_other <- all_features$df_other
 
 lake_obs_area <- lakes %>% 
@@ -295,3 +294,25 @@ figure_s3 <- obs_pred_df %>%
 figure_s3
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_s3.png"), figure_s3, units = "mm", width = 129, height = 234)
+
+#Supplementary table 1
+#Overview of predictor variables
+all_features_join <- response_df %>% 
+  left_join(all_features$df_other) %>% 
+  left_join(all_features$df_catch) %>% 
+  left_join(all_features$df_buffer) %>% 
+  select(-lake_id, -basin_id, -catch_id, -gml_id) %>% 
+  select(-chl_a, -color, -ph, -tn, -tp, -secchi, -pco2, -alk)
+
+table_s1_data <- all_features_join %>% 
+  gather(variable, value) %>% 
+  group_by(variable) %>% 
+  na.omit() %>% 
+  summarise(min = min(value), q25 = quantile(value, 0.25), median = median(value), 
+            mean = mean(value), q75 = quantile(value, 0.75), max=max(value)) %>% 
+  arrange(variable)
+
+write_csv(table_s1_data, paste0(getwd(), "/manuscript/figures/table_s1.csv"))
+
+#Supplementary table 2
+#(in manuscript)
