@@ -2,7 +2,7 @@
 
 source("libs_and_funcs.R")
 
-library(mlr);library(mlrMBO)
+library(mlr)
 
 #Load data
 data_preproc <- readRDS(paste0(getwd(), "/data/data_preproc.rds"))
@@ -12,13 +12,11 @@ data_test <- data_preproc$test
 data_recipe <- data_preproc$data_recipe
 
 #Define resample for inner and outer loops
-#cv_outer = makeResampleDesc("RepCV", folds = 10, reps = 2)
 cv_outer = makeResampleDesc("CV", iters = 5)
 cv_inner = makeResampleDesc("CV", iters = 4)
 
 #Tune method
 tune_random = makeTuneControlRandom(budget = 30)
-tune_mbo = makeTuneControlMBO(budget = 30)
 
 #Measures to report
 regr_measures = list(rmse, rsq, mae, timeboth)
@@ -30,9 +28,6 @@ ps.randomforest = makeParamSet(
   makeNumericParam("sample.fraction", lower = 0.1, upper = 1),
   makeIntegerParam("min.node.size", lower = 1, upper = 20)
 )
-
-#makeDiscreteParam("splitrule", c("variance","extratrees","maxstat")),
-#makeLogicalParam("replace", TRUE)
 
 ps.fnn = makeParamSet(makeIntegerParam("k", lower = 1, upper = 100))
 
@@ -56,17 +51,5 @@ ps.svm = makeParamSet(
 )
 
 ps.plsr = makeParamSet(
-  makeIntegerParam("ncomp", lower = 2, upper = 50),
-  makeLogicalParam("scale", FALSE)
-)
-
-ps.xgboost <- makeParamSet(
-  makeIntegerParam("nrounds", lower = 100, upper = 2000),
-  makeIntegerParam("max_depth", lower = 1, upper = 10),
-  makeNumericParam("eta", lower = -5, upper = 0, trafo = function(x){10^x}),
-  makeNumericParam("subsample", lower = 0.1, upper = 1),
-  makeNumericParam("min_child_weight", lower = 0, upper = 20),
-  makeNumericParam("alpha", lower = -10, upper = 10, trafo = function(x){2^x}),
-  makeNumericParam("lambda", lower = -10, upper = 10, trafo = function(x){2^x}),
-  makeDiscreteParam("booster", c("gbtree","gblinear","dart"))
+  makeIntegerParam("ncomp", lower = 2, upper = 50)
 )

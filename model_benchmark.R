@@ -2,8 +2,6 @@
 
 source("model_setup.R")
 
-library(parallelMap)
-
 #Define learners
 lrn.nofeats = makeLearner("regr.featureless")
 
@@ -23,11 +21,9 @@ lrn.svm = makeTuneWrapper("regr.svm", resampling = cv_inner, par.set = ps.svm, c
 
 lrn.ranger = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
 
-lrn.xgboost = makeTuneWrapper(makeLearner("regr.xgboost", nthread=5), resampling = cv_inner, par.set = ps.xgboost, control = tune_random) 
-
 lrn.stacked = makeStackedLearner(list(lrn.nnet, lrn.plsr, lrn.elastic, lrn.ranger), super.learner = "regr.lm", method = "stack.cv", resampling = makeResampleDesc("CV", iters = 5))
 
-lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.stacked) #lrn.xgboost
+lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.stacked)
 
 bmr_result_list <- list()
 

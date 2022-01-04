@@ -4,8 +4,6 @@
 
 source("model_setup.R")
 
-library(parallelMap);library(recipes);library(iml)
-
 #Create list with best learners for each response variable
 lrn.ranger = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
 
@@ -52,7 +50,7 @@ for(i in response_vars){
   perf <- performance(pred, measures = list(mlr::rmse, mlr::mae, mlr::rsq))
   
   #Feature importance
-  model_iml <- Predictor$new(fit, data = data_train_var, y = i)
+  model_iml <- Predictor$new(fit, data = data_train_var, y = i) #should be test data?
   
   feature_importance <- FeatureImp$new(model_iml, loss = "rmse")
   
