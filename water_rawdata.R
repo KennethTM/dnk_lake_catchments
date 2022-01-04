@@ -2,7 +2,7 @@
 
 source("libs_and_funcs.R")
 
-library(data.table);library(seacarb);library(mgcv)
+library(data.table)
 
 #Lake chemistry, profile (water temperature) and secchi depth raw data 
 lake_chem <- read_excel(paste0(rawdata_path, "lake_chemistry_2000_2019.xlsx"))
@@ -116,7 +116,6 @@ lake_all_carb_agg <- lake_all_carb_gml %>%
   ungroup() %>% 
   filter(n >= 4) %>% 
   select(-n) %>% 
-  #spread(variable, value_med) %>% 
   mutate(gml_id = factor(gml_id))
 
 #Fit cyclic cubic spline models for each variable with "site" as random effect
