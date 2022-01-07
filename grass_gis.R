@@ -2,7 +2,7 @@ source("libs_and_funcs.R")
 
 dk_border <- st_read(gis_database, "dk_border")
 
-dhym_10m_labels <- paste0(getwd(), "/data/dhym_10m_labels.tif")
+dhym_10m_labels <- paste0(getwd(), "/rawdata/dhym_10m_labels.tif")
 
 dhym_labels_raster <- raster(dhym_10m_labels)
 

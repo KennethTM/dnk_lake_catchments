@@ -1,10 +1,32 @@
-#Calculate terrain metrics from 10 m dem
-
+#Calculate terrain metrics from 10 m dem and create surface with elevations above terrain only
 import richdem as rd
 import os
 import rasterio as rio
+import numpy as np
 
-dem = rd.LoadGDAL(os.path.join(os.getcwd(), "rawdata", "dk_dtm_10m.tif"))
+dtm_path = os.path.join(os.getcwd(), "rawdata", "dtm_10m.tif")
+dsm_path = os.path.join(os.getcwd(), "rawdata", "dsm_10m.tif")
+
+#Substract dtm_10m from dsm_10m
+with rio.open(dtm_path) as dtm:
+    dtm_meta = dtm.profile
+    dtm_array = dtm.read(1)
+    dtm_array[dtm_array == -9999] = np.nan
+
+with rio.open(dsm_path) as dsm:
+    dsm_meta = dsm.profile
+    dsm_array = dsm.read(1)
+    dsm_array[dsm_array == -9999] = np.nan
+
+dsm_minus_dtm_path = os.path.join(os.getcwd(), "rawdata", "dsm_minus_dtm_10m.tif")
+
+with rio.open(dsm_minus_dtm_path, "w", **dsm_meta) as dst:
+    diff_array = dsm_array-dtm_array
+    diff_array[np.isnan(diff_array)] = -9999
+    dst.write(diff_array, 1)
+
+#Calculate terrain metrics
+dem = rd.LoadGDAL(dtm_path)
 
 modes_dict = {"slope": "slope_percentage",
               "aspect": "aspect",

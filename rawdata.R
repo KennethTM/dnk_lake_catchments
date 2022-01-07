@@ -23,12 +23,11 @@ dem_asc_files <- sapply(dem_files, function(x){
 gdalbuildvrt(paste0("/vsizip/", dem_asc_files), 
              dhym,
              allow_projection_difference = TRUE,
-             a_srs = paste0("EPSG:", dk_epsg)
-)
+             a_srs = paste0("EPSG:", dk_epsg))
 
-#create national 10 m dem for drainage basin delineation
+#Create national 10 m dem for drainage basin delineation (minimum function for resampling)
 gdalwarp(srcfile = dhym,
-         dstfile = paste0(getwd(), "/data/dhym_10m.tif"),
+         dstfile = paste0(getwd(), "/rawdata/dhym_10m.tif"),
          cutline = gis_database,
          cl = "dk_border",
          crop_to_cutline = TRUE,
@@ -40,34 +39,79 @@ gdalwarp(srcfile = dhym,
          multi = TRUE,
          wm = 4000)
 
-#DSM/DTM 10 m code missing!!
+#Create national 10 m dem (terrain model, e.g. without buildings, trees etc.) 
+#for computing geomorphometrical variables (average function for resampling)
+gdalwarp(srcfile = dhym,
+         dstfile = paste0(getwd(), "/rawdata/dtm_10m.tif"),
+         cutline = gis_database,
+         cl = "dk_border",
+         crop_to_cutline = TRUE,
+         overwrite = TRUE,
+         dstnodata = -9999,
+         r = "average",
+         co = c("COMPRESS=LZW", "BIGTIFF=YES"),
+         tr = c(10, 10),
+         multi = TRUE,
+         wm = 8000,
+         wo = "NUM_THREADS=ALL_CPUS")
+
+#Create national 10 dem (surface model, e.g. height of objects AND terrain)
+dsm_files <- list.files(paste0(rawdata_path, "DSM/UTM32"), pattern = "*.zip", full.names = TRUE)
+
+dsm_asc_files <- sapply(dsm_files, function(x){
+  zip_files <- unzip(x, list = TRUE)
+  asc_file <- zip_files$Name[grepl("*.asc", zip_files$Name)]
+  asc_path <- paste0(x, "/", asc_file)
+  return(asc_path)
+})
+
+dsm <- paste0(getwd(), "/rawdata/dsm.vrt")
+
+gdalbuildvrt(paste0("/vsizip/", dsm_asc_files), 
+             dsm,
+             allow_projection_difference = TRUE,
+             a_srs = paste0("EPSG:", dk_epsg))
+
+gdalwarp(srcfile = dsm,
+         dstfile = paste0(getwd(), "/rawdata/dsm_10m.tif"),
+         cutline = gis_database,
+         cl = "dk_border",
+         crop_to_cutline = TRUE,
+         overwrite = TRUE,
+         dstnodata = -9999,
+         r = "average",
+         co = c("COMPRESS=LZW", "BIGTIFF=YES"),
+         tr = c(10, 10),
+         multi = TRUE,
+         wm = 8000,
+         wo = "NUM_THREADS=ALL_CPUS")
 
 #Breaching 10 m dem 
 dhym_10m_breach <- paste(paste0(richdem_apps_path, "rd_depressions_breach.exe"),
-                         paste0(getwd(), "/data/dhym_10m.tif"),
-                         paste0(getwd(), "/data/dhym_10m_breach_raw.tif"),
+                         paste0(getwd(), "/rawdata/dhym_10m.tif"),
+                         paste0(getwd(), "/rawdata/dhym_10m_breach_raw.tif"),
                          "COMPLETE NOEPS NOFILL 0 0")
 
 system(dhym_10m_breach)
 
-gdal_translate(paste0(getwd(), "/data/dhym_10m_breach_raw.tif"),
-               paste0(getwd(), "/data/dhym_10m_breach.tif"),
+gdal_translate(paste0(getwd(), "/rawdata/dhym_10m_breach_raw.tif"),
+               paste0(getwd(), "/rawdata/dhym_10m_breach.tif"),
                co = "COMPRESS=LZW")
 
-file.remove(paste0(getwd(), "/data/dhym_10m_breach_raw.tif"))
+file.remove(paste0(getwd(), "/rawdata/dhym_10m_breach_raw.tif"))
 
 #Label watersheds in 10 m dem using richdem functionality in "rd_label_watersheds.exe
 dhym_10m_labels <- paste(paste0(richdem_apps_path, "rd_label_watersheds.exe"),
-                         paste0(getwd(), "/data/dhym_10m_breach.tif"),
-                         paste0(getwd(), "/data/dhym_10m_labels_raw.tif"))
+                         paste0(getwd(), "/rawdata/dhym_10m_breach.tif"),
+                         paste0(getwd(), "/rawdata/dhym_10m_labels_raw.tif"))
 
 system(dhym_10m_labels)
 
-gdal_translate(paste0(getwd(), "/data/dhym_10m_labels_raw.tif"),
-               paste0(getwd(), "/data/dhym_10m_labels.tif"),
+gdal_translate(paste0(getwd(), "/rawdata/dhym_10m_labels_raw.tif"),
+               paste0(getwd(), "/rawdata/dhym_10m_labels.tif"),
                co = "COMPRESS=LZW")
 
-file.remove(paste0(getwd(), "/data/dhym_10m_labels_raw.tif"))
+file.remove(paste0(getwd(), "/rawdata/dhym_10m_labels_raw.tif"))
 
 #Read soil and landcover layers and write to database
 soil_path <- paste0(rawdata_path, "Jordart_200000_Shape/jordart_200000_ids.shp")

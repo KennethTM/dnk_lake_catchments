@@ -12,12 +12,12 @@ basin_sub_path <- paste0(getwd(), "/data/basin_sub/")
 catchments_sub_path <- paste0(getwd(), "/data/catchments_sub/")
 flowdir_sub_path <- paste0(getwd(), "/data/flowdir_sub/")
 
-dhym <- paste0(getwd(), "/data/dhym_rain.vrt")
-
 processed_catchments <- parse_number(list.files(catchments_sub_path, pattern = "*.shp"))
 
 dk_epsg <- 25832
 gis_database <- paste0(getwd(), "/data/gis_database.sqlite")
+
+dhym <- paste0(getwd(), "/rawdata/dhym_rain.vrt")
 
 response_vars <- c("alk", "chl_a", "color", "ph", "tn", "tp", "secchi", "pco2")
 
