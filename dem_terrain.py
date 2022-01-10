@@ -5,7 +5,8 @@ import rasterio as rio
 import numpy as np
 
 dtm_path = os.path.join(os.getcwd(), "rawdata", "dtm_10m.tif")
-dsm_path = os.path.join(os.getcwd(), "rawdata", "dsm_10m.tif")
+dsm_path = os.path.join(os.getcwd(), "rawdata", "dsm_10m_raw.tif")
+dsm_minus_dtm_path = os.path.join(os.getcwd(), "rawdata", "dsm_10m.tif")
 
 #Substract dtm_10m from dsm_10m
 with rio.open(dtm_path) as dtm:
@@ -17,8 +18,6 @@ with rio.open(dsm_path) as dsm:
     dsm_meta = dsm.profile
     dsm_array = dsm.read(1)
     dsm_array[dsm_array == -9999] = np.nan
-
-dsm_minus_dtm_path = os.path.join(os.getcwd(), "rawdata", "dsm_minus_dtm_10m.tif")
 
 with rio.open(dsm_minus_dtm_path, "w", **dsm_meta) as dst:
     diff_array = dsm_array-dtm_array
@@ -53,3 +52,13 @@ for k, v in modes_dict.items():
       dst.write(src_array, 1)
   
   os.remove(metric_path)
+
+#Calculate Terrain Ruggedness Index
+#Alg. req. equires GDAL 3.3
+dtm_tri_path = os.path.join(os.getcwd(), "rawdata", "dtm_tri_10m.tif")
+dsm_tri_path = os.path.join(os.getcwd(), "rawdata", "dsm_tri_10m.tif")
+
+tri_cmd = "gdaldem TRI {} {} -alg Riley -co COMPRESS=LZW" 
+
+os.system(tri_cmd.format(dtm_path, dtm_tri_path))
+os.system(tri_cmd.format(dsm_minus_dtm_path, dsm_tri_path))

@@ -2,26 +2,7 @@
 
 source("model_setup.R")
 
-#Define learners
-lrn.nofeats = makeLearner("regr.featureless")
-
-lrn.lm = makeLearner("regr.lm")
-
-lrn.elastic = makeTuneWrapper("regr.glmnet", resampling = cv_inner, par.set = ps.elastic, control = tune_random)
-
-lrn.fnn = makeTuneWrapper("regr.fnn", resampling = cv_inner, par.set = ps.fnn, control = tune_random)
-
-lrn.rpart = makeTuneWrapper("regr.rpart", resampling = cv_inner, par.set = ps.rpart, control = tune_random) 
-
-lrn.plsr = makeTuneWrapper("regr.plsr", resampling = cv_inner, par.set = ps.plsr, control = tune_random) 
-
-lrn.nnet = makeTuneWrapper(makeLearner("regr.nnet", maxit=500), resampling = cv_inner, par.set = ps.nnet, control = tune_random)
-
-lrn.svm = makeTuneWrapper("regr.svm", resampling = cv_inner, par.set = ps.svm, control = tune_random)
-
-lrn.ranger = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
-
-lrn.stacked = makeStackedLearner(list(lrn.nnet, lrn.plsr, lrn.elastic, lrn.ranger), super.learner = "regr.lm", method = "stack.cv", resampling = makeResampleDesc("CV", iters = 5))
+#ADD SVM TO STACK - OR DROP STACK? OR NOCV STACK? REPCV IF NO STACK
 
 lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.stacked)
 

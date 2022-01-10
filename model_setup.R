@@ -2,8 +2,6 @@
 
 source("libs_and_funcs.R")
 
-library(mlr)
-
 #Load data
 data_preproc <- readRDS(paste0(getwd(), "/data/data_preproc.rds"))
 
@@ -41,7 +39,7 @@ ps.rpart = makeParamSet(makeNumericParam("cp", lower = 0, upper = 1),
                         makeIntegerParam("minsplit", lower = 5, upper = 50))
 
 ps.nnet = makeParamSet(
-  makeIntegerParam("size", lower = 2, upper = 15),
+  makeIntegerParam("size", lower = 2, upper = 25),
   makeNumericParam("decay", lower = -5, upper = 1, trafo = function(x){10^x})
 )
 
@@ -53,3 +51,24 @@ ps.svm = makeParamSet(
 ps.plsr = makeParamSet(
   makeIntegerParam("ncomp", lower = 2, upper = 50)
 )
+
+#Define learners
+lrn.nofeats = makeLearner("regr.featureless")
+
+lrn.lm = makeLearner("regr.lm")
+
+lrn.elastic = makeTuneWrapper("regr.glmnet", resampling = cv_inner, par.set = ps.elastic, control = tune_random)
+
+lrn.fnn = makeTuneWrapper("regr.fnn", resampling = cv_inner, par.set = ps.fnn, control = tune_random)
+
+lrn.rpart = makeTuneWrapper("regr.rpart", resampling = cv_inner, par.set = ps.rpart, control = tune_random) 
+
+lrn.plsr = makeTuneWrapper("regr.plsr", resampling = cv_inner, par.set = ps.plsr, control = tune_random) 
+
+lrn.nnet = makeTuneWrapper(makeLearner("regr.nnet", maxit=500, MaxNWts = 2500), resampling = cv_inner, par.set = ps.nnet, control = tune_random)
+
+lrn.svm = makeTuneWrapper("regr.svm", resampling = cv_inner, par.set = ps.svm, control = tune_random)
+
+lrn.ranger = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
+
+lrn.stacked = makeStackedLearner(list(lrn.nnet, lrn.plsr, lrn.elastic, lrn.ranger), super.learner = "regr.lm", method = "stack.cv", resampling = makeResampleDesc("CV", iters = 5))

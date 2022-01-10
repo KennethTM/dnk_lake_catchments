@@ -25,11 +25,11 @@ catch_all <- catch_all_raw %>%
 #Write to database and shapefile
 st_write(catch_all, gis_database, "catchments_raw", delete_layer = TRUE)
 
-catchment_path <- paste0(getwd(), "/data/catchments_raw.shp")
+catchment_path <- paste0(getwd(), "/data/temp_shp_files/catchments_raw.shp")
 st_write(catch_all, catchment_path)
 
 #Use mapshaper cmd line functions to simplify polygons
-catchment_simple_path <- paste0(getwd(), "/data/catch_all_simple.shp")
+catchment_simple_path <- paste0(getwd(), "/data/temp_shp_files/catch_all_simple.shp")
 
 simplify_cmd <- paste("mapshaper-xl 16gb", catchment_path, "-simplify", "10%", "keep-shapes", "-o", catchment_simple_path)
 system(simplify_cmd)

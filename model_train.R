@@ -5,8 +5,6 @@
 source("model_setup.R")
 
 #Create list with best learners for each response variable
-lrn.ranger = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
-
 best_models <- list("alk" = lrn.ranger, "chl_a" = lrn.ranger, "color" =lrn.ranger, "ph" = lrn.ranger,
                     "tn" = lrn.ranger, "tp" = lrn.ranger, "secchi" = lrn.ranger, "pco2" = lrn.ranger)
 
@@ -50,7 +48,7 @@ for(i in response_vars){
   perf <- performance(pred, measures = list(mlr::rmse, mlr::mae, mlr::rsq))
   
   #Feature importance
-  model_iml <- Predictor$new(fit, data = data_train_var, y = i) #should be test data?
+  model_iml <- Predictor$new(fit, data = data_test_var, y = i)
   
   feature_importance <- FeatureImp$new(model_iml, loss = "rmse")
   
@@ -78,11 +76,8 @@ all_features <- readRDS(paste0(getwd(), "/data/", "all_features.rds"))
 
 #Combine data
 data_all <- all_features$df_other %>% 
-  left_join(all_features$df_buffer_50) %>% 
-  left_join(all_features$df_buffer_250) %>% 
-  left_join(all_features$df_catch) %>% 
-  rename(lake_stream_connect_n = lake_stream_connect) %>% 
-  mutate(lake_stream_connect = ifelse(lake_stream_connect_n == 0, 0, 1))
+  left_join(all_features$df_buffer) %>% 
+  left_join(all_features$df_catch)
 
 #Preproces data in the same way as for modeling
 data_all_preproc <- bake(data_recipe, new_data = data_all) %>% 

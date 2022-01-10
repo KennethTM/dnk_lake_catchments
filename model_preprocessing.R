@@ -1,13 +1,10 @@
 source("libs_and_funcs.R")
 
-library(rsample)
-
 response_df <- readRDS(paste0(getwd(), "/data/", "response_vars.rds"))
 all_features <- readRDS(paste0(getwd(), "/data/", "all_features.rds"))
 
 data_raw <- response_df %>% 
-  left_join(all_features$df_buffer_50) %>% 
-  left_join(all_features$df_buffer_250) %>% 
+  left_join(all_features$df_buffer) %>% 
   left_join(all_features$df_catch) %>% 
   left_join(all_features$df_other) %>% 
   select(-lake_id, -basin_id, -catch_id, -gml_id) %>% 
@@ -27,7 +24,8 @@ preproc_recipe <- recipe(alk + chl_a + color + ph + tn + tp + secchi + pco2 ~ . 
   step_sqrt(contains("mean.soil_"), contains("mean.clc_")) %>% 
   step_YeoJohnson(all_predictors(), -contains("mean.soil_"), -contains("mean.clc_"), -ice_covered, -lake_stream_connect) %>% 
   step_center(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
-  step_scale(all_predictors(), -ice_covered, -lake_stream_connect)
+  step_scale(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
+  step_corr(all_predictors(), -ice_covered, -lake_stream_connect, threshold = 0.9)
 
 recipe_fit <- prep(preproc_recipe, training = data_train)
 

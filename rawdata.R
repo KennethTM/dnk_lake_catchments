@@ -1,6 +1,6 @@
 source("libs_and_funcs.R")
 
-#dk border
+#Denmark border
 dk_border_raw <- raster::getData("GADM", country = "DNK", level = 0, path = rawdata_path)
 
 dk_border <- dk_border_raw %>%
@@ -73,7 +73,7 @@ gdalbuildvrt(paste0("/vsizip/", dsm_asc_files),
              a_srs = paste0("EPSG:", dk_epsg))
 
 gdalwarp(srcfile = dsm,
-         dstfile = paste0(getwd(), "/rawdata/dsm_10m.tif"),
+         dstfile = paste0(getwd(), "/rawdata/dsm_10m_raw.tif"),
          cutline = gis_database,
          cl = "dk_border",
          crop_to_cutline = TRUE,

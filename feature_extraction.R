@@ -12,7 +12,7 @@ dk_border <- st_read(gis_database, layer = "dk_border")
 
 #Topographical features
 topo_features <- list.files(rawdata_path, pattern = "*_10m.tif", full.names = TRUE)
-topo_stack <- stack(topo_features)
+topo_stack <- stack(topo_features[!grepl("dhym*", topo_features)])
 
 poly_list <- list(catch_all_no_lake, lakes_50, lakes_100, lakes_250)
 suffix_list <- list(".catch", ".buffer_50", ".buffer_100", ".buffer_250")
@@ -24,7 +24,7 @@ topo_mean_df <- mapply(function(poly, suffix){
   poly_list, suffix_list, SIMPLIFY = FALSE)
 
 topo_range_df <- mapply(function(poly, suffix){
-  df <- exact_extract(topo_stack[[c("dk_dtm_10m", "dk_dsm_10m", "slope_10m")]], poly, fun=c("min", "max"), max_cells_in_memory = 2e+09)
+  df <- exact_extract(topo_stack[[c("dtm_10m", "dsm_10m", "slope_10m")]], poly, fun=c("min", "max"), max_cells_in_memory = 2e+09)
   names(df) <- paste0(names(df), suffix)
   return(df)}, 
   poly_list, suffix_list, SIMPLIFY = FALSE)
@@ -61,13 +61,15 @@ dk_iceage_line <- dk_iceage %>%
   st_intersection(dk_border) %>% 
   st_collection_extract("LINESTRING")
 
+lakes_centroid <- st_centroid(st_geometry(lakes))
+
 lake_attr <- lakes %>%
   mutate(lake_area_m2 = as.numeric(st_area(GEOMETRY)),
          lake_shoreline_m = as.numeric(st_length(st_cast(GEOMETRY, "MULTILINESTRING"))),
          lake_dev_ind = lake_shoreline_m/(2*sqrt(pi*lake_area_m2))) %>% 
-  mutate(ice_covered = as.numeric(st_intersects(dk_iceage, st_centroid(GEOMETRY), sparse = FALSE)),
-         ice_line_dist = as.numeric(st_distance(dk_iceage_line, st_centroid(GEOMETRY), by_element=TRUE)),
-         shoreline_dist = as.numeric(st_distance(st_cast(dk_border, "MULTILINESTRING"), st_centroid(GEOMETRY), by_element=TRUE))) %>% 
+  mutate(ice_covered = as.numeric(st_intersects(dk_iceage, lakes_centroid, sparse = FALSE)),
+         ice_line_dist = as.numeric(st_distance(dk_iceage_line, lakes_centroid, by_element=TRUE)),
+         shoreline_dist = as.numeric(st_distance(st_cast(dk_border, "MULTILINESTRING"), lakes_centroid, by_element=TRUE))) %>% 
   st_drop_geometry()
 
 lakes_bbox_dims <- lakes %>% 
@@ -129,20 +131,20 @@ df_other <- lake_attr %>%
          lake_catch_area_ratio = lake_area_m2/catch_area_m2)
 
 df_catch <- cbind(st_drop_geometry(catch_all_no_lake), topo_mean_df[[1]], topo_range_df[[1]], clc_catch, soil_catch, climate_catch) %>% 
-  mutate(range.dk_dtm_10m.catch = max.dk_dtm_10m.catch - min.dk_dtm_10m.catch,
-         range.dk_dsm_10m.catch = max.dk_dsm_10m.catch - min.dk_dsm_10m.catch) %>% 
+  mutate(range.dtm_10m.catch = max.dtm_10m.catch - min.dtm_10m.catch,
+         range.dsm_10m.catch = max.dsm_10m.catch - min.dsm_10m.catch) %>% 
   select(-contains("min."), -contains("max."))
 
 df_buffer <- cbind(st_drop_geometry(lakes_50), do.call(cbind, topo_mean_df[2:4]), do.call(cbind, topo_range_df[2:4])) %>% 
   as_tibble() %>% 
-  mutate(range.dk_dtm_10m.buffer_50 = max.dk_dtm_10m.buffer_50 - min.dk_dtm_10m.buffer_50,
-         range.dk_dtm_10m.buffer_100 = max.dk_dtm_10m.buffer_100 - min.dk_dtm_10m.buffer_100,
-         range.dk_dtm_10m.buffer_250 = max.dk_dtm_10m.buffer_250 - min.dk_dtm_10m.buffer_250,
-         range.dk_dsm_10m.buffer_50 = max.dk_dsm_10m.buffer_50 - min.dk_dsm_10m.buffer_50,
-         range.dk_dsm_10m.buffer_100 = max.dk_dsm_10m.buffer_100 - min.dk_dsm_10m.buffer_100,
-         range.dk_dsm_10m.buffer_250 = max.dk_dsm_10m.buffer_250 - min.dk_dsm_10m.buffer_250) %>% 
-  select(-contains("max.dk_dtm_10m."), -contains("min.dk_dtm_10m."),
-         -contains("max.dk_dsm_10m."), -contains("min.dk_dsm_10m."),
+  mutate(range.dtm_10m.buffer_50 = max.dtm_10m.buffer_50 - min.dtm_10m.buffer_50,
+         range.dtm_10m.buffer_100 = max.dtm_10m.buffer_100 - min.dtm_10m.buffer_100,
+         range.dtm_10m.buffer_250 = max.dtm_10m.buffer_250 - min.dtm_10m.buffer_250,
+         range.dsm_10m.buffer_50 = max.dsm_10m.buffer_50 - min.dsm_10m.buffer_50,
+         range.dsm_10m.buffer_100 = max.dsm_10m.buffer_100 - min.dsm_10m.buffer_100,
+         range.dsm_10m.buffer_250 = max.dsm_10m.buffer_250 - min.dsm_10m.buffer_250) %>% 
+  select(-contains("max.dtm_10m."), -contains("min.dtm_10m."),
+         -contains("max.dsm_10m."), -contains("min.dsm_10m."),
          -contains("min.slope_10m."))
 
 all_features <- list("df_buffer" = df_buffer, "df_catch" = df_catch, "df_other" = df_other)
