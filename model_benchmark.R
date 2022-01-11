@@ -2,9 +2,7 @@
 
 source("model_setup.R")
 
-#ADD SVM TO STACK - OR DROP STACK? OR NOCV STACK? REPCV IF NO STACK
-
-lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger, lrn.stacked)
+lrn.list = list(lrn.nofeats, lrn.lm, lrn.elastic, lrn.fnn, lrn.rpart, lrn.plsr, lrn.nnet, lrn.svm, lrn.ranger)
 
 bmr_result_list <- list()
 
@@ -21,7 +19,7 @@ for(i in response_vars){
   
   task_train <- makeRegrTask(data=data_train_var, target=i)
   
-  parallelStart(mode = "socket", cpus=10, mc.set.seed = TRUE, level = "mlr.tuneParams")
+  parallelStart(mode = "socket", cpus=10, mc.set.seed = TRUE, level = "mlr.resample")
   
   benchmark_regr = benchmark(learners = lrn.list,
                              tasks = task_train,

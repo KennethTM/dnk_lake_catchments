@@ -10,7 +10,8 @@ data_test <- data_preproc$test
 data_recipe <- data_preproc$data_recipe
 
 #Define resample for inner and outer loops
-cv_outer = makeResampleDesc("CV", iters = 5)
+cv_outer = makeResampleDesc("RepCV", reps=5, folds=5)
+#cv_outer = makeResampleDesc("CV", iters = 5)
 cv_inner = makeResampleDesc("CV", iters = 4)
 
 #Tune method
@@ -22,7 +23,7 @@ regr_measures = list(rmse, rsq, mae, timeboth)
 #Define hyperparameter search spaces for model training
 ps.randomforest = makeParamSet(
   makeIntegerParam("mtry", lower = 2, upper = 50), 
-  makeIntegerParam("num.trees", lower = 100, upper = 2000),
+  makeIntegerParam("num.trees", lower = 250, upper = 2500),
   makeNumericParam("sample.fraction", lower = 0.1, upper = 1),
   makeIntegerParam("min.node.size", lower = 1, upper = 20)
 )
@@ -70,5 +71,3 @@ lrn.nnet = makeTuneWrapper(makeLearner("regr.nnet", maxit=500, MaxNWts = 2500), 
 lrn.svm = makeTuneWrapper("regr.svm", resampling = cv_inner, par.set = ps.svm, control = tune_random)
 
 lrn.ranger = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random) 
-
-lrn.stacked = makeStackedLearner(list(lrn.nnet, lrn.plsr, lrn.elastic, lrn.ranger), super.learner = "regr.lm", method = "stack.cv", resampling = makeResampleDesc("CV", iters = 5))

@@ -4,9 +4,13 @@
 
 source("model_setup.R")
 
+#Use best model found in model selectin and increase tuning budget for final training
+tune_random_final = makeTuneControlRandom(budget = 100)
+lrn.ranger_final = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random_final) 
+
 #Create list with best learners for each response variable
-best_models <- list("alk" = lrn.ranger, "chl_a" = lrn.ranger, "color" =lrn.ranger, "ph" = lrn.ranger,
-                    "tn" = lrn.ranger, "tp" = lrn.ranger, "secchi" = lrn.ranger, "pco2" = lrn.ranger)
+best_models <- list("alk" = lrn.ranger_final, "chl_a" = lrn.ranger_final, "color" =lrn.ranger_final, "ph" = lrn.ranger_final,
+                    "tn" = lrn.ranger_final, "tp" = lrn.ranger_final, "secchi" = lrn.ranger_final, "pco2" = lrn.ranger_final)
 
 models <- list()
 predictions <- list()
