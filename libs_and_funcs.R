@@ -3,6 +3,7 @@ library(exactextractr);library(rgrass7);library(link2GI)
 library(nngeo);library(readxl);library(lubridate);library(parallelMap)
 library(recipes);library(iml);library(seacarb);library(mgcv);library(mlr)
 library(rsample)
+library(scales);library(patchwork);library(RColorBrewer)
 
 rawdata_path <- paste0(getwd(), "/rawdata/")
 

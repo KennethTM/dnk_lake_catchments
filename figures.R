@@ -1,8 +1,8 @@
 #Figures for manuscript
 
-source("libs_and_funcs.R")
+#PRETTIFY FIGURE LABELS AND ANNOTATIONS
 
-library(scales);library(patchwork);library(RColorBrewer);library(corrplot)
+source("libs_and_funcs.R")
 
 response_df <- readRDS(paste0(getwd(), "/data/", "response_vars.rds"))
 model_results <- readRDS(paste0(getwd(), "/data/", "model_results.rds"))
@@ -61,6 +61,8 @@ figure_1 <- ggplot()+
   theme(legend.position = "bottom")+
   guides(fill=guide_colorbar(title.position = "top", barwidth = 8, title.hjust = 0.5))
 
+figure_1
+
 ggsave(paste0(getwd(), "/manuscript/figures/figure_1.png"), figure_1, units = "mm", width = 129, height = 84)
 
 #Figure 2
@@ -113,6 +115,8 @@ figure_2_c <- df_other %>%
 
 figure_2 <- figure_2_a+figure_2_b+figure_2_c+plot_annotation(tag_levels = "A")+plot_layout(ncol = 1)
 
+figure_2
+
 ggsave(paste0(getwd(), "/manuscript/figures/figure_2.png"), figure_2, units = "mm", width = 129, height = 190)
 
 #Figure 3 
@@ -145,9 +149,11 @@ importance_df <- bind_rows(importance, .id = "response") %>%
   group_by(response) %>% 
   mutate(importance_normalized = (importance - min(importance))/(max(importance) - min(importance)))
 
-importance_cleaned <- importance_df %>% 
-  mutate(feature = gsub("mean.", "", feature),
-         feature = gsub("10m.", "", feature))
+importance_cleaned <- importance_df #%>% 
+  #mutate(feature = gsub("mean.", "", feature),
+  #       feature = gsub("10m.", "", feature),
+  #       feature = gsub("max.", "", feature),
+  #       feature = gsub("range.", "", feature))
 
 figure_4 <- importance_cleaned %>% 
   rename(Importance = importance_normalized) %>% 
@@ -165,7 +171,7 @@ figure_4
 ggsave(paste0(getwd(), "/manuscript/figures/figure_4.png"), figure_4, units = "mm", width = 129, height = 180)
 
 #Figure 5
-#Ale plots for ?? most important vars
+#Ale plots for four most important vars
 top_4_imp <- importance_df %>% 
   group_by(response) %>% 
   arrange(desc(importance)) %>% 
@@ -216,33 +222,16 @@ pca_df <- data.frame(response = importance_wide$response, PC1 = pca_res$x[,1], P
 figure_6 <- pca_df %>% 
   ggplot(aes(PC1, PC2, label=response))+
   geom_text()+
-  xlab("1st principal component (45%)")+
-  ylab("2nd principal component (19%)")
+  xlab("1st principal component (42.5%)")+
+  ylab("2nd principal component (17.8%)")
 
 figure_6
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_6.png"), figure_6, units = "mm", width = 84, height = 84)
 
-#3D plot??
-# library(plot3D)
-# text3D(x = pca_res$x[,1], y = pca_res$x[,2], z = pca_res$x[,3], labels = importance_wide$response,
-#        theta = 45+90, phi=25, bty="b2", xlab = "PC 1 (45%)", ylab = "PC 2 (19%)", zlab = "PC 3 (10%)")
-
 #Supplementary figure S1
-response_df_cor <- response_df %>% 
-  select(-gml_id) %>% 
-  mutate_at(vars(chl_a, color, ph, tn, tp, secchi, pco2), ~log10(.x)) %>% 
-  mutate_at(vars(alk), ~log10(.x + 1))
-
-response_cor <- cor(response_df_cor, use = "pairwise.complete.obs")
-
-png(file = paste0(getwd(), "/manuscript/figures/figure_s1.png"), width = 129, height = 129, units = "mm", res=300)
-corrplot.mixed(response_cor, order = 'AOE')
-dev.off()
-
-#Supplementary figure 2
 #Benchmark of learners
-model_bmr <- readRDS(paste0(getwd(), "/data/model_bmr_211221.rds"))
+model_bmr <- readRDS(paste0(getwd(), "/data/model_bmr_110122.rds"))
 
 model_aggr_df <- lapply(model_bmr, \(x){x$aggr}) %>% 
   bind_rows(.id="response")
@@ -257,7 +246,7 @@ model_aggr_df_clean <- model_aggr_df %>%
   group_by(response, variable) %>% 
   mutate(value_rank = rank(-value)) 
 
-figure_s2 <- model_aggr_df_clean %>% 
+figure_s1 <- model_aggr_df_clean %>% 
   ggplot(aes(reorder(model, value_rank), value))+
   geom_point()+
   geom_linerange(aes(ymin=0, ymax=value))+
@@ -268,11 +257,11 @@ figure_s2 <- model_aggr_df_clean %>%
   ylab("Score")+
   theme(strip.background = element_blank())
 
-figure_s2
+figure_s1
 
-ggsave(paste0(getwd(), "/manuscript/figures/figure_s2.png"), figure_s2, units = "mm", width = 174, height = 200)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_s1.png"), figure_s1, units = "mm", width = 174, height = 200)
 
-#Supplementary figure 3
+#Supplementary figure S2
 predictions <- model_results$predictions
 
 obs_pred_df <- lapply(predictions, \(x){x$data}) %>% 
@@ -280,7 +269,7 @@ obs_pred_df <- lapply(predictions, \(x){x$data}) %>%
   as_tibble() %>% 
   select(-id)
 
-figure_s3 <- obs_pred_df %>% 
+figure_s2 <- obs_pred_df %>% 
   ggplot(aes(truth, response))+
   geom_abline(intercept = 0, slope=1, linetype=3)+
   geom_point(shape=1, alpha=0.5)+
@@ -291,11 +280,26 @@ figure_s3 <- obs_pred_df %>%
   scale_x_continuous(expand = expansion(mult = c(0.3, 0.3)))+
   scale_y_continuous(expand = expansion(mult = c(0.3, 0.3)))
 
-figure_s3
+figure_s2
 
-ggsave(paste0(getwd(), "/manuscript/figures/figure_s3.png"), figure_s3, units = "mm", width = 129, height = 234)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_s2.png"), figure_s2, units = "mm", width = 129, height = 234)
 
-#Supplementary table 1
+#Supplementary table S1
+response_df_cor <- response_df %>% 
+  select(-gml_id) %>% 
+  mutate_at(vars(chl_a, color, ph, tn, tp, secchi, pco2), ~log10(.x)) %>% 
+  mutate_at(vars(alk), ~log10(.x + 1))
+
+response_cor <- cor(response_df_cor, use = "pairwise.complete.obs")
+
+cor_matrix_upper <- upper.tri(response_cor, diag = FALSE)
+
+response_cor_upper <- round(response_cor, 2)
+response_cor_upper[cor_matrix_upper] = ""
+
+write.csv(as.data.frame(response_cor_upper), paste0(getwd(), "/manuscript/figures/table_s1.csv"))
+
+#Supplementary table S2
 #Overview of predictor variables
 all_features_join <- response_df %>% 
   left_join(all_features$df_other) %>% 
@@ -312,7 +316,7 @@ table_s1_data <- all_features_join %>%
             mean = mean(value), q75 = quantile(value, 0.75), max=max(value)) %>% 
   arrange(variable)
 
-write_csv(table_s1_data, paste0(getwd(), "/manuscript/figures/table_s1.csv"))
+write_csv(table_s1_data, paste0(getwd(), "/manuscript/figures/table_s2.csv"))
 
-#Supplementary table 2
+#Supplementary table 3
 #(in manuscript)

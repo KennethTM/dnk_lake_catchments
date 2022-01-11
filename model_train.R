@@ -12,6 +12,8 @@ lrn.ranger_final = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), re
 best_models <- list("alk" = lrn.ranger_final, "chl_a" = lrn.ranger_final, "color" =lrn.ranger_final, "ph" = lrn.ranger_final,
                     "tn" = lrn.ranger_final, "tp" = lrn.ranger_final, "secchi" = lrn.ranger_final, "pco2" = lrn.ranger_final)
 
+#DOUBLE CHECK WHICH LEARNER IS BEST FOR EACH RESPONSE
+
 models <- list()
 predictions <- list()
 performance <- list()
@@ -75,7 +77,7 @@ model_results <- list("models" = models,
 #Save all results from training and evaluation og models
 saveRDS(model_results, paste0(getwd(), "/data/", "model_results.rds"))
 
-#Predict for all lakes in denmark
+#Predict for all lakes in Denmark
 all_features <- readRDS(paste0(getwd(), "/data/", "all_features.rds"))
 
 #Combine data
@@ -93,7 +95,7 @@ predict_all <- lapply(model_results$models, \(model){predict(model, newdata=data
 #Convert to data frame and save
 predict_all_df <- bind_cols(predict_all) %>% 
   set_names(names(model_results$models)) %>% 
-  bind_cols(dplyr::select(data_all, contains("id"))) %>% 
+  bind_cols(dplyr::select(data_all, contains("_id"))) %>% 
   mutate_at(dplyr::vars(chl_a, color, ph, tn, tp, secchi, pco2), ~10^.x) %>% 
   mutate_at(dplyr::vars(alk), ~(10^.x)-1) %>% 
   relocate(contains("_id"))

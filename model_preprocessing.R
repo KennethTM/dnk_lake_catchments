@@ -27,6 +27,8 @@ preproc_recipe <- recipe(alk + chl_a + color + ph + tn + tp + secchi + pco2 ~ . 
   step_scale(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
   step_corr(all_predictors(), -ice_covered, -lake_stream_connect, threshold = 0.9)
 
+#ADJUST CORR THRESHOLD, REMOVE LAKE BBOX AND HEIGHT WHICH IS HIGH CORRELATED WITH LAKE ARE
+
 recipe_fit <- prep(preproc_recipe, training = data_train)
 
 data_train_preproc <- bake(recipe_fit, new_data = data_train)
