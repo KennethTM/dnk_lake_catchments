@@ -24,6 +24,18 @@ dhym <- paste0(getwd(), "/rawdata/dhym_rain.vrt")
 
 response_vars <- c("alk", "chl_a", "color", "ph", "tn", "tp", "secchi", "pco2")
 
+labels_df <- data.frame(variable = c("alk", "chl_a", "color", "pco2", "ph", "secchi", "tn", "tp"), 
+                        label_table = c("Alkalinity", "Chlorophyll a", "Color", "pCO2", "pH", "Secchi depth", "Total nitrogen", "Total phosphorus"),
+                        label_unit = factor(c("Alkalinity~'('*meq~L^{-1}*')'", "Chlorophyll~italic(a)~'('*mu*g~L^{-1}*')'", "Color~'('*mg~Pt~L^{-1}*')'", "pCO[2]~'('*mu*atm*')'", "pH~'('*pH*')'", "Secchi~'('*m*')'", "TN~'('*mg~L^{-1}*')'", "TP~'('*mg~L^{-1}*')'"),
+                                            levels = c("Alkalinity~'('*meq~L^{-1}*')'", "Chlorophyll~italic(a)~'('*mu*g~L^{-1}*')'", "Color~'('*mg~Pt~L^{-1}*')'", "pCO[2]~'('*mu*atm*')'", "pH~'('*pH*')'", "Secchi~'('*m*')'", "TN~'('*mg~L^{-1}*')'", "TP~'('*mg~L^{-1}*')'")),
+                        label_no_unit = factor(c("Alk.", "Chl.~italic(a)", "Color", "pCO[2]", "pH", "Secchi", "TN", "TP"),
+                                            levels = c("Alk.", "Chl.~italic(a)", "Color", "pCO[2]", "pH", "Secchi", "TN", "TP")),
+                        label_long_no_unit = factor(c("Alkalinity", "Chlorophyll~italic(a)", "Color", "pCO[2]", "pH", "Secchi~depth", "Total~nitrogen", "Total~phosphorus"),
+                                               levels = c("Alkalinity", "Chlorophyll~italic(a)", "Color", "pCO[2]", "pH", "Secchi~depth", "Total~nitrogen", "Total~phosphorus")))
+
+model_labels_df <- data.frame(model = c("featureless", "lm", "glmnet", "fnn", "rpart", "plsr", "nnet", "svm", "ranger"),
+                              label = c("AVG", "LM", "ELAST", "NN", "TREE", "PLSR", "NNET", "SVM", "RF"))
+
 #Figure sizing. For most journals the figures should be 39 mm, 84 mm, 129 mm, or 174 mm wide and not higher than 234 mm.
 #ggplot theme
 theme_pub <- theme_bw() + 
@@ -34,17 +46,17 @@ theme_pub <- theme_bw() +
         strip.background = element_rect(fill = "white"))
 theme_set(theme_pub)
 
-# #Function to compute polygon bbox width and height for each sf feature
-# st_dims_by_feature <- function(x, mode = "height") {
-#   x <- st_geometry(x)
-#   
-#   if(mode == "height"){
-#     f <- \(x){b <- st_bbox(x); return(b[["ymax"]] - b[["ymin"]])}
-#   }else if(mode == "width"){
-#     f <- \(x){b <- st_bbox(x); return(b[["xmax"]] - b[["xmin"]])}
-#   }else{
-#     return(NULL)
-#   }
-#   
-#   do.call("c", lapply(x, f))
-# }
+#Function to compute polygon bbox width and height for each sf feature
+st_dims_by_feature <- function(x, mode = "height") {
+  x <- st_geometry(x)
+
+  if(mode == "height"){
+    f <- \(x){b <- st_bbox(x); return(b[["ymax"]] - b[["ymin"]])}
+  }else if(mode == "width"){
+    f <- \(x){b <- st_bbox(x); return(b[["xmax"]] - b[["xmin"]])}
+  }else{
+    return(NULL)
+  }
+
+  do.call("c", lapply(x, f))
+}
