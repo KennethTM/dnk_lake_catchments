@@ -222,8 +222,8 @@ pca_df <- data.frame(response = importance_wide$response, PC1 = pca_res$x[,1], P
 figure_6 <- pca_df %>% 
   ggplot(aes(PC1, PC2, label=response))+
   geom_text()+
-  xlab("1st principal component (42.5%)")+
-  ylab("2nd principal component (17.8%)")
+  xlab("1st Principal component (42.5%)")+
+  ylab("2nd Principal component (17.8%)")
 
 figure_6
 
@@ -285,21 +285,6 @@ figure_s2
 ggsave(paste0(getwd(), "/manuscript/figures/figure_s2.png"), figure_s2, units = "mm", width = 129, height = 234)
 
 #Supplementary table S1
-response_df_cor <- response_df %>% 
-  select(-gml_id) %>% 
-  mutate_at(vars(chl_a, color, ph, tn, tp, secchi, pco2), ~log10(.x)) %>% 
-  mutate_at(vars(alk), ~log10(.x + 1))
-
-response_cor <- cor(response_df_cor, use = "pairwise.complete.obs")
-
-cor_matrix_upper <- upper.tri(response_cor, diag = FALSE)
-
-response_cor_upper <- round(response_cor, 2)
-response_cor_upper[cor_matrix_upper] = ""
-
-write.csv(as.data.frame(response_cor_upper), paste0(getwd(), "/manuscript/figures/table_s1.csv"))
-
-#Supplementary table S2
 #Overview of predictor variables
 all_features_join <- response_df %>% 
   left_join(all_features$df_other) %>% 
@@ -313,10 +298,26 @@ table_s1_data <- all_features_join %>%
   group_by(variable) %>% 
   na.omit() %>% 
   summarise(min = min(value), q25 = quantile(value, 0.25), median = median(value), 
-            mean = mean(value), q75 = quantile(value, 0.75), max=max(value)) %>% 
+            mean = mean(value), q75 = quantile(value, 0.75), max = max(value)) %>% 
   arrange(variable)
 
-write_csv(table_s1_data, paste0(getwd(), "/manuscript/figures/table_s2.csv"))
+write_csv(table_s1_data, paste0(getwd(), "/manuscript/figures/table_s1.csv"))
 
-#Supplementary table 3
+#Supplementary table S2
 #(in manuscript)
+
+#Supplementary table S3
+response_df_cor <- response_df %>% 
+  select(-gml_id) %>% 
+  mutate_at(vars(chl_a, color, ph, tn, tp, secchi, pco2), ~log10(.x)) %>% 
+  mutate_at(vars(alk), ~log10(.x + 1))
+
+corr_matrix <- rcorr(as.matrix(response_df_cor), type="pearson")
+
+corr_matrix_mask <- lower.tri(corr_matrix$r, diag = FALSE)
+
+corr_matrix$r[corr_matrix_mask] = corr_matrix$P[corr_matrix_mask]
+
+corr_matrix_round = round(corr_matrix$r, 3)
+
+write.csv(as.data.frame(corr_matrix_round), paste0(getwd(), "/manuscript/figures/table_s3.csv"))

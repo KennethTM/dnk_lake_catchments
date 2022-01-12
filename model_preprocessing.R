@@ -9,7 +9,8 @@ data_raw <- response_df %>%
   left_join(all_features$df_other) %>% 
   select(-lake_id, -basin_id, -catch_id, -gml_id) %>% 
   mutate_at(vars(chl_a, color, ph, tn, tp, secchi, pco2), ~log10(.x)) %>% 
-  mutate_at(vars(alk), ~log10(.x + 1))
+  mutate_at(vars(alk), ~log10(.x + 1)) %>% 
+  select(-lake_bbox_width_m, -lake_bbox_height_m)
 
 summary(data_raw)
 
@@ -25,9 +26,7 @@ preproc_recipe <- recipe(alk + chl_a + color + ph + tn + tp + secchi + pco2 ~ . 
   step_YeoJohnson(all_predictors(), -contains("mean.soil_"), -contains("mean.clc_"), -ice_covered, -lake_stream_connect) %>% 
   step_center(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
   step_scale(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
-  step_corr(all_predictors(), -ice_covered, -lake_stream_connect, threshold = 0.9)
-
-#ADJUST CORR THRESHOLD, REMOVE LAKE BBOX AND HEIGHT WHICH IS HIGH CORRELATED WITH LAKE ARE
+  step_corr(all_predictors(), -ice_covered, -lake_stream_connect, threshold = 0.7, method = "spearman")
 
 recipe_fit <- prep(preproc_recipe, training = data_train)
 

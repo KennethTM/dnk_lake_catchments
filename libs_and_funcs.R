@@ -4,6 +4,7 @@ library(nngeo);library(readxl);library(lubridate);library(parallelMap)
 library(recipes);library(iml);library(seacarb);library(mgcv);library(mlr)
 library(rsample)
 library(scales);library(patchwork);library(RColorBrewer)
+library(Hmisc)
 
 rawdata_path <- paste0(getwd(), "/rawdata/")
 
@@ -33,17 +34,17 @@ theme_pub <- theme_bw() +
         strip.background = element_rect(fill = "white"))
 theme_set(theme_pub)
 
-#Function to compute polygon bbox width and height for each sf feature
-st_dims_by_feature <- function(x, mode = "height") {
-  x <- st_geometry(x)
-  
-  if(mode == "height"){
-    f <- \(x){b <- st_bbox(x); return(b[["ymax"]] - b[["ymin"]])}
-  }else if(mode == "width"){
-    f <- \(x){b <- st_bbox(x); return(b[["xmax"]] - b[["xmin"]])}
-  }else{
-    return(NULL)
-  }
-  
-  do.call("c", lapply(x, f))
-}
+# #Function to compute polygon bbox width and height for each sf feature
+# st_dims_by_feature <- function(x, mode = "height") {
+#   x <- st_geometry(x)
+#   
+#   if(mode == "height"){
+#     f <- \(x){b <- st_bbox(x); return(b[["ymax"]] - b[["ymin"]])}
+#   }else if(mode == "width"){
+#     f <- \(x){b <- st_bbox(x); return(b[["xmax"]] - b[["xmin"]])}
+#   }else{
+#     return(NULL)
+#   }
+#   
+#   do.call("c", lapply(x, f))
+# }
