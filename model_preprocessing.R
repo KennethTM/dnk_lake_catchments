@@ -9,8 +9,7 @@ data_raw <- response_df %>%
   left_join(all_features$df_other) %>% 
   select(-lake_id, -basin_id, -catch_id, -gml_id) %>% 
   mutate_at(vars(chl_a, color, ph, tn, tp, secchi, pco2), ~log10(.x)) %>% 
-  mutate_at(vars(alk), ~log10(.x + 1)) %>% 
-  select(-lake_bbox_width_m, -lake_bbox_height_m)
+  mutate_at(vars(alk), ~log10(.x + 1))
 
 summary(data_raw)
 
@@ -21,6 +20,7 @@ data_test <- testing(data_split)
 
 preproc_recipe <- recipe(alk + chl_a + color + ph + tn + tp + secchi + pco2 ~ . , data = data_train) %>% 
   step_impute_median(all_predictors()) %>% 
+  step_rm(lake_bbox_width_m, lake_bbox_height_m) %>% 
   step_nzv(all_predictors()) %>% 
   step_sqrt(contains("mean.soil_"), contains("mean.clc_")) %>% 
   step_YeoJohnson(all_predictors(), -contains("mean.soil_"), -contains("mean.clc_"), -ice_covered, -lake_stream_connect) %>% 

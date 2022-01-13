@@ -1,12 +1,12 @@
 #Figures for manuscript
 
-#PRETTIFY FIGURE LABELS AND ANNOTATIONS
-
 source("libs_and_funcs.R")
 
 response_df <- readRDS(paste0(getwd(), "/data/", "response_vars.rds"))
 model_results <- readRDS(paste0(getwd(), "/data/", "model_results.rds"))
 all_features <- readRDS(paste0(getwd(), "/data/", "all_features.rds"))
+
+feature_labels <- read_excel(paste0(getwd(), "/rawdata/", "feature_labels.xlsx"))
 
 #Table 1
 #Table with response variable distributional characteristics
@@ -171,26 +171,24 @@ importance_df <- bind_rows(importance, .id = "response") %>%
 
 importance_cleaned <- importance_df %>%
   left_join(labels_df, by=c("response" = "variable")) %>% 
-  select(-response, -label_table, -label_unit)
-  #mutate(feature = gsub("mean.", "", feature),
-  #       feature = gsub("10m.", "", feature),
-  #       feature = gsub("max.", "", feature),
-  #       feature = gsub("range.", "", feature))
+  select(-response, -label_table, -label_unit) %>% 
+  left_join(feature_labels, by =c("feature" = "variable")) %>% 
+  mutate(label_join = paste0(Variable, " (", Level, ifelse(is.na(Distance), "", paste0(", ", Distance)), ")"))
 
 figure_4 <- importance_cleaned %>% 
   rename(Importance = importance_normalized) %>% 
-  ggplot(aes(x = label_no_unit, y=factor(reorder(feature, Importance)), fill=Importance))+
+  ggplot(aes(x = label_no_unit, y=factor(reorder(label_join, Importance)), fill=Importance))+
   geom_tile()+
   scale_x_discrete(expand = c(0,0), position = "top", labels = parse(text = levels(importance_cleaned$label_no_unit)))+
   scale_fill_gradientn(colours = brewer.pal(9, "YlOrRd"))+
   theme(legend.position = "bottom", legend.direction = "horizontal")+
-  guides(fill=guide_colorbar(title.position = "bottom", title.hjust = 0.5, barwidth = unit(82, "mm"), ticks=FALSE))+
-  ylab("Predictors")+
+  guides(fill=guide_colorbar(title.position = "bottom", title.hjust = 0.5, barwidth = unit(100, "mm"), ticks=FALSE))+
+  ylab("Predictor variables")+
   xlab("Response variables")
 
 figure_4
 
-ggsave(paste0(getwd(), "/manuscript/figures/figure_4.png"), figure_4, units = "mm", width = 129, height = 180)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_4.png"), figure_4, units = "mm", width = 174, height = 234)
 
 #Figure 5
 #Ale plots for four most important vars
@@ -212,12 +210,14 @@ ale_df_top_4 <- top_4_imp %>%
 ale_df_labels <- ale_df_top_4 %>% 
   group_by(response, feature, rank) %>% 
   summarise(.borders = last(.borders), .value = last(.value)) %>% 
-  left_join(labels_df, by = c("response" = "variable"))
+  left_join(labels_df, by = c("response" = "variable")) %>% 
+  left_join(feature_labels, by =c("feature" = "variable")) %>% 
+  mutate(label_join = paste0(Variable, " (", Level, ifelse(is.na(Distance), "", paste0(", ", Distance)), ")"))
 
 figure_5 <- ale_df_top_4 %>% 
   ggplot(aes(.borders, .value, col=rank))+
   geom_line()+
-  geom_text(data = ale_df_labels, aes(label = feature), hjust=0, show.legend = FALSE)+ 
+  geom_text(data = ale_df_labels, aes(label = label_join), hjust=0, show.legend = FALSE)+ 
   facet_wrap(label_unit~., scales="free", ncol=2, labeller = label_parsed)+
   scale_color_manual(values = rev(brewer.pal(9, "YlOrRd"))[c(1, 3, 5, 6)])+
   ylab(expression("Relative response (log"[10]~scale*")"))+
@@ -332,10 +332,7 @@ table_s1_data <- all_features_join %>%
   na.omit() %>% 
   summarise(min = min(value), q25 = quantile(value, 0.25), median = median(value), 
             mean = mean(value), q75 = quantile(value, 0.75), max = max(value)) %>% 
-  arrange(variable) %>% 
-  mutate(stat = sub("\\..*", "", variable)) 
-
-#DO REGEX FOR TO CREATE TABLE WITH SENSIBLE LABELS
+  arrange(variable)
 
 write_csv(table_s1_data, paste0(getwd(), "/manuscript/figures/table_s1.csv"))
 
