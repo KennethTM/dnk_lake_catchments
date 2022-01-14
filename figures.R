@@ -171,16 +171,18 @@ importance_df <- bind_rows(importance, .id = "response") %>%
 
 importance_cleaned <- importance_df %>%
   left_join(labels_df, by=c("response" = "variable")) %>% 
-  select(-response, -label_table, -label_unit) %>% 
+  select(-response, -label_table, -label_unit) 
+
+importance_cleaned_label <- importance_cleaned %>% 
   left_join(feature_labels, by =c("feature" = "variable")) %>% 
   mutate(level_abbrev = str_sub(Level, end = 1),
          label_join = paste0(Variable, " (", level_abbrev, ifelse(is.na(Distance), "", Distance), ")"))
 
-figure_4 <- importance_cleaned %>% 
+figure_4 <- importance_cleaned_label %>% 
   rename(Importance = importance_normalized) %>% 
   ggplot(aes(x = label_no_unit, y=factor(reorder(label_join, Importance)), fill=Importance))+
   geom_tile()+
-  scale_x_discrete(expand = c(0,0), position = "top", labels = parse(text = levels(importance_cleaned$label_no_unit)))+
+  scale_x_discrete(expand = c(0,0), position = "top", labels = parse(text = levels(importance_cleaned_label$label_no_unit)))+
   scale_fill_gradientn(colours = brewer.pal(9, "YlOrRd"))+
   theme(legend.position = "bottom", legend.direction = "horizontal")+
   guides(fill=guide_colorbar(title.position = "bottom", title.hjust = 0.5, barwidth = unit(100, "mm"), ticks=FALSE))+
@@ -237,7 +239,7 @@ ggsave(paste0(getwd(), "/manuscript/figures/figure_5.png"), figure_5, units = "m
 #Dimensionality reduction of the response variables based on variable importance
 importance_wide <- importance_cleaned %>% 
   ungroup() %>% 
-  select(-importance) %>% 
+  select(-importance, -label_long_no_unit) %>% 
   spread(feature, importance_normalized)
 
 pca_res <- prcomp(importance_wide[,-1], scale. = TRUE)
@@ -248,8 +250,8 @@ pca_df <- data.frame(response = importance_wide$label_no_unit, PC1 = pca_res$x[,
 figure_6 <- pca_df %>% 
   ggplot(aes(PC1, PC2, label=response))+
   geom_text(parse=TRUE)+
-  xlab("1st Principal component (42.5%)")+
-  ylab("2nd Principal component (17.8%)")+
+  xlab("1st Principal component (72.2%)")+
+  ylab("2nd Principal component (9.7%)")+
   scale_x_continuous(expand = expansion(mult = c(0.15, 0.15)))+
   scale_y_continuous(expand = expansion(mult = c(0.15, 0.15)))
 
@@ -282,8 +284,7 @@ model_aggr_df_clean <- model_aggr_df %>%
 
 figure_s1 <- model_aggr_df_clean %>% 
   ggplot(aes(reorder(label, value_rank), value))+
-  geom_point()+
-  geom_linerange(aes(ymin=0, ymax=value))+
+  geom_col(col="black", fill="white")+
   coord_flip(ylim=c(0, 0.70))+
   geom_hline(yintercept = 0, linetype=3)+
   facet_grid(label_no_unit~variable_label, scales = "free", labeller = label_parsed)+
@@ -293,7 +294,7 @@ figure_s1 <- model_aggr_df_clean %>%
 
 figure_s1
 
-ggsave(paste0(getwd(), "/manuscript/figures/figure_s1.png"), figure_s1, units = "mm", width = 174, height = 200)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_s1.png"), figure_s1, units = "mm", width = 174, height = 234)
 
 #Supplementary figure S2
 predictions <- model_results$predictions

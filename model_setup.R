@@ -10,8 +10,8 @@ data_test <- data_preproc$test
 data_recipe <- data_preproc$data_recipe
 
 #Define resample for inner and outer loops
-cv_outer = makeResampleDesc("RepCV", reps=5, folds=5)
-#cv_outer = makeResampleDesc("CV", iters = 5)
+#cv_outer = makeResampleDesc("RepCV", reps=1, folds=5)
+cv_outer = makeResampleDesc("CV", iters = 5)
 cv_inner = makeResampleDesc("CV", iters = 4)
 
 #Tune method
@@ -40,7 +40,7 @@ ps.rpart = makeParamSet(makeNumericParam("cp", lower = 0, upper = 1),
                         makeIntegerParam("minsplit", lower = 5, upper = 50))
 
 ps.nnet = makeParamSet(
-  makeIntegerParam("size", lower = 2, upper = 25),
+  makeIntegerParam("size", lower = 2, upper = 20),
   makeNumericParam("decay", lower = -5, upper = 1, trafo = function(x){10^x})
 )
 
@@ -66,7 +66,7 @@ lrn.rpart = makeTuneWrapper("regr.rpart", resampling = cv_inner, par.set = ps.rp
 
 lrn.plsr = makeTuneWrapper("regr.plsr", resampling = cv_inner, par.set = ps.plsr, control = tune_random) 
 
-lrn.nnet = makeTuneWrapper(makeLearner("regr.nnet", maxit=500, MaxNWts = 2500), resampling = cv_inner, par.set = ps.nnet, control = tune_random)
+lrn.nnet = makeTuneWrapper(makeLearner("regr.nnet", maxit=400, MaxNWts = 2000), resampling = cv_inner, par.set = ps.nnet, control = tune_random)
 
 lrn.svm = makeTuneWrapper("regr.svm", resampling = cv_inner, par.set = ps.svm, control = tune_random)
 

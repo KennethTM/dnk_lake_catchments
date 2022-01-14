@@ -7,12 +7,12 @@ source("model_setup.R")
 #Use best model found in model selectin and increase tuning budget for final training
 tune_random_final = makeTuneControlRandom(budget = 100)
 lrn.ranger_final = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random_final) 
+lrn.elastic_final = makeTuneWrapper("regr.glmnet", resampling = cv_inner, par.set = ps.elastic, control = tune_random_final)
+lrn.svm_final = makeTuneWrapper("regr.svm", resampling = cv_inner, par.set = ps.svm, control = tune_random)
 
 #Create list with best learners for each response variable
-best_models <- list("alk" = lrn.ranger_final, "chl_a" = lrn.ranger_final, "color" =lrn.ranger_final, "ph" = lrn.ranger_final,
-                    "tn" = lrn.ranger_final, "tp" = lrn.ranger_final, "secchi" = lrn.ranger_final, "pco2" = lrn.ranger_final)
-
-#DOUBLE CHECK WHICH LEARNER IS BEST FOR EACH RESPONSE
+best_models <- list("alk" = lrn.ranger_final, "chl_a" = lrn.ranger_final, "color" =lrn.elastic_final, "ph" = lrn.ranger_final,
+                    "tn" = lrn.ranger_final, "tp" = lrn.svm_final, "secchi" = lrn.ranger_final, "pco2" = lrn.elastic_final)
 
 models <- list()
 predictions <- list()
