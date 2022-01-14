@@ -173,7 +173,8 @@ importance_cleaned <- importance_df %>%
   left_join(labels_df, by=c("response" = "variable")) %>% 
   select(-response, -label_table, -label_unit) %>% 
   left_join(feature_labels, by =c("feature" = "variable")) %>% 
-  mutate(label_join = paste0(Variable, " (", Level, ifelse(is.na(Distance), "", paste0(", ", Distance)), ")"))
+  mutate(level_abbrev = str_sub(Level, end = 1),
+         label_join = paste0(Variable, " (", level_abbrev, ifelse(is.na(Distance), "", Distance), ")"))
 
 figure_4 <- importance_cleaned %>% 
   rename(Importance = importance_normalized) %>% 
@@ -212,7 +213,8 @@ ale_df_labels <- ale_df_top_4 %>%
   summarise(.borders = last(.borders), .value = last(.value)) %>% 
   left_join(labels_df, by = c("response" = "variable")) %>% 
   left_join(feature_labels, by =c("feature" = "variable")) %>% 
-  mutate(label_join = paste0(Variable, " (", Level, ifelse(is.na(Distance), "", paste0(", ", Distance)), ")"))
+  mutate(level_abbrev = str_sub(Level, end = 1),
+         label_join = paste0(Variable, " (", level_abbrev, ifelse(is.na(Distance), "", Distance), ")"))
 
 figure_5 <- ale_df_top_4 %>% 
   ggplot(aes(.borders, .value, col=rank))+
@@ -223,7 +225,7 @@ figure_5 <- ale_df_top_4 %>%
   ylab(expression("Relative response (log"[10]~scale*")"))+
   xlab("Scaled values")+
   scale_x_continuous(expand = expansion(mult = c(0.1, 0.5)))+
-  scale_y_continuous(expand = expansion(mult = c(0.1, 0.1)))+
+  scale_y_continuous(expand = expansion(mult = c(0.2, 0.2)))+
   theme(strip.background = element_blank(), legend.position = "bottom")+
   guides(color = guide_legend(title = "Importance rank"))
 
