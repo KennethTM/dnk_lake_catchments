@@ -2,8 +2,6 @@
 
 source("libs_and_funcs.R")
 
-library(data.table)
-
 #Lake chemistry, profile (water temperature) and secchi depth raw data 
 lake_chem <- read_excel(paste0(rawdata_path, "lake_chemistry_2000_2019.xlsx"))
 lake_chem <- as.data.table(lake_chem)

@@ -1,10 +1,13 @@
+#Load libraries
+
+library(data.table);library(Hmisc);library(mgcv);library(seacarb)
 library(raster);library(sf);library(gdalUtils);library(tidyverse)
 library(exactextractr);library(rgrass7);library(link2GI)
 library(nngeo);library(readxl);library(lubridate);library(parallelMap)
-library(recipes);library(iml);library(seacarb);library(mgcv);library(mlr)
-library(rsample)
-library(scales);library(patchwork);library(RColorBrewer)
-library(Hmisc)
+library(recipes);library(iml);library(mlr)
+library(rsample);library(scales);library(patchwork);library(RColorBrewer)
+
+#Define some paths, constants, and functions
 
 rawdata_path <- paste0(getwd(), "/rawdata/")
 
