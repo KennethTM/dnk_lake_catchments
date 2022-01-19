@@ -53,22 +53,24 @@ dk_iceage_cut <- dk_iceage %>%
   st_collection_extract("LINESTRING")
 
 lakes_points <- lakes %>% 
-  filter(gml_id %in% response_df$gml_id) %>% 
-  st_centroid()
+  right_join(response_df) %>% 
+  st_centroid() %>% 
+  mutate(alk_impute = ifelse(is.na(alk), median(alk, na.rm = TRUE), alk))
 
 #DK plot
 figure_1 <- ggplot()+
-  geom_sf(data = dk_border, fill = grey(0.8), col = grey(0.8))+
-  geom_sf(data = dk_iceage_cut, col = brewer.pal(5, "BrBG")[5], linetype = 1, show.legend = FALSE)+
-  geom_sf(data = lakes_points, shape=1, size = 0.6)+
+  geom_sf(data = dk_border, fill = NA, col = "black", size = 0.3)+
+  geom_sf(data = lakes_points, aes(col=alk_impute), size = 0.6)+
+  geom_sf(data = dk_iceage_cut, col = "black", linetype = 2, show.legend = FALSE)+ #brewer.pal(5, "BrBG")[5]
+  scale_color_viridis_c(direction = -1)+
   scale_x_continuous(breaks = seq(8, 15, 1), labels = paste0(seq(8, 15, 1),'°E')) +
   scale_y_continuous(breaks = seq(54.5, 57.5, 0.5), labels = paste0(seq(54.5, 57.5, 0.5),'°N'))+
-  theme(legend.position = "bottom")+
-  guides(fill=guide_colorbar(title.position = "top", barwidth = 8, title.hjust = 0.5))
+  theme(legend.position = c(0.8, 0.85), legend.direction = "horizontal")+
+  guides(color=guide_colorbar(title = expression("Alkalinity (meq."~L^{-1}*")"), title.position = "top", barwidth = unit(35, "mm"), ticks=FALSE))
 
 figure_1
 
-ggsave(paste0(getwd(), "/manuscript/figures/figure_1.png"), figure_1, units = "mm", width = 129, height = 84)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_1.png"), figure_1, units = "mm", width = 129, height = 100)
 
 #Figure 2
 #Lake and catchment area distributions
