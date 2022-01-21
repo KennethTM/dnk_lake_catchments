@@ -10,8 +10,8 @@ data_test <- data_preproc$test
 data_recipe <- data_preproc$data_recipe
 
 #Define resample for inner and outer loops
-#cv_outer = makeResampleDesc("RepCV", reps=1, folds=5)
-cv_outer = makeResampleDesc("CV", iters = 5)
+cv_outer = makeResampleDesc("RepCV", reps=6, folds=5)
+#cv_outer = makeResampleDesc("CV", iters = 5)
 cv_inner = makeResampleDesc("CV", iters = 4)
 
 #Tune method

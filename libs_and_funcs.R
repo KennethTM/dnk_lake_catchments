@@ -7,6 +7,8 @@ library(nngeo);library(readxl);library(lubridate);library(parallelMap)
 library(recipes);library(iml);library(mlr)
 library(rsample);library(scales);library(patchwork);library(RColorBrewer)
 
+set.seed(9999)
+
 #Define some paths, constants, and functions
 
 rawdata_path <- paste0(getwd(), "/rawdata/")
