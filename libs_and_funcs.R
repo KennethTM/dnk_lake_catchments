@@ -31,8 +31,8 @@ response_vars <- c("alk", "chl_a", "color", "ph", "tn", "tp", "secchi", "pco2")
 
 labels_df <- data.frame(variable = c("alk", "chl_a", "color", "pco2", "ph", "secchi", "tn", "tp"), 
                         label_table = c("Alkalinity", "Chlorophyll a", "Color", "pCO2", "pH", "Secchi depth", "Total nitrogen", "Total phosphorus"),
-                        label_unit = factor(c("Alkalinity~'('*meq~L^{-1}*')'", "Chlorophyll~italic(a)~'('*mu*g~L^{-1}*')'", "Color~'('*mg~Pt~L^{-1}*')'", "pCO[2]~'('*mu*atm*')'", "pH~'('*pH*')'", "Secchi~'('*m*')'", "TN~'('*mg~L^{-1}*')'", "TP~'('*mg~L^{-1}*')'"),
-                                            levels = c("Alkalinity~'('*meq~L^{-1}*')'", "Chlorophyll~italic(a)~'('*mu*g~L^{-1}*')'", "Color~'('*mg~Pt~L^{-1}*')'", "pCO[2]~'('*mu*atm*')'", "pH~'('*pH*')'", "Secchi~'('*m*')'", "TN~'('*mg~L^{-1}*')'", "TP~'('*mg~L^{-1}*')'")),
+                        label_unit = factor(c("Alkalinity~'('*meq.~L^{-1}*')'", "Chlorophyll~italic(a)~'('*mu*g~L^{-1}*')'", "Color~'('*mg~Pt~L^{-1}*')'", "pCO[2]~'('*mu*atm*')'", "pH~'('*pH*')'", "Secchi~'('*m*')'", "TN~'('*mg~L^{-1}*')'", "TP~'('*mg~L^{-1}*')'"),
+                                            levels = c("Alkalinity~'('*meq.~L^{-1}*')'", "Chlorophyll~italic(a)~'('*mu*g~L^{-1}*')'", "Color~'('*mg~Pt~L^{-1}*')'", "pCO[2]~'('*mu*atm*')'", "pH~'('*pH*')'", "Secchi~'('*m*')'", "TN~'('*mg~L^{-1}*')'", "TP~'('*mg~L^{-1}*')'")),
                         label_no_unit = factor(c("Alk.", "Chl.~italic(a)", "Color", "pCO[2]", "pH", "Secchi", "TN", "TP"),
                                             levels = c("Alk.", "Chl.~italic(a)", "Color", "pCO[2]", "pH", "Secchi", "TN", "TP")),
                         label_long_no_unit = factor(c("Alkalinity", "Chlorophyll~italic(a)", "Color", "pCO[2]", "pH", "Secchi~depth", "Total~nitrogen", "Total~phosphorus"),

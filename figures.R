@@ -145,6 +145,11 @@ predict_stats <- predict_long %>%
   mutate(stat = factor(stat, levels = c("5%", "25%", "Median", "Mean", "75%", "95%")))
 
 figure_3 <- predict_long %>% 
+  mutate(value = ifelse(label_long_no_unit == "Secchi~depth" & value > 4, NA, value),
+         value = ifelse(label_long_no_unit == "Total~phosphorus" & value > 1, NA, value),
+         value = ifelse(label_long_no_unit == "Color" & value > 800, NA, value),
+         value = ifelse(label_long_no_unit == "Chlorophyll~italic(a)" & value > 150, NA, value),
+         value = ifelse(label_long_no_unit == "Alkalinity" & value > 6, NA, value)) %>% 
   ggplot(aes(value)) +
   geom_freqpoly(aes(y=..count..), col="black", bins=25)+
   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
@@ -180,7 +185,10 @@ importance_cleaned_label <- importance_cleaned %>%
   mutate(level_abbrev = str_sub(Level, end = 1),
          label_join = paste0(Variable, " (", level_abbrev, ifelse(is.na(Distance), "", Distance), ")"))
 
+#features_top_20 <- factor(reorder(importance_cleaned_label$label_join, importance_cleaned_label$importance_normalized, FUN=max))[1:20]
+
 figure_4 <- importance_cleaned_label %>% 
+  #filter(label_join %in% features_top_20) %>% 
   rename(Importance = importance_normalized) %>% 
   ggplot(aes(x = label_no_unit, y=factor(reorder(label_join, Importance)), fill=Importance))+
   geom_tile()+
@@ -227,7 +235,7 @@ figure_5 <- ale_df_top_4 %>%
   facet_wrap(label_unit~., scales="free", ncol=2, labeller = label_parsed)+
   scale_color_manual(values = rev(brewer.pal(9, "YlOrRd"))[c(1, 3, 5, 6)])+
   ylab(expression("Relative response (log"[10]~scale*")"))+
-  xlab("Scaled values")+
+  xlab("Standardized values (unit standard deviation)")+
   scale_x_continuous(expand = expansion(mult = c(0.1, 0.5)))+
   scale_y_continuous(expand = expansion(mult = c(0.2, 0.2)))+
   theme(strip.background = element_blank(), legend.position = "bottom")+
@@ -241,19 +249,21 @@ ggsave(paste0(getwd(), "/manuscript/figures/figure_5.png"), figure_5, units = "m
 #Dimensionality reduction of the response variables based on variable importance
 importance_wide <- importance_cleaned %>% 
   ungroup() %>% 
-  select(-importance, -label_long_no_unit) %>% 
-  spread(feature, importance_normalized)
+  select(-importance_normalized, -label_long_no_unit) %>% 
+  spread(feature, importance)
 
-pca_res <- prcomp(importance_wide[,-1], scale. = TRUE)
+pca_res <- prcomp(importance_wide[,-1], scale. = TRUE, center = TRUE)
 summary(pca_res)
 
 pca_df <- data.frame(response = importance_wide$label_no_unit, PC1 = pca_res$x[,1], PC2 = pca_res$x[,2])
 
+library(ggrepel)
 figure_6 <- pca_df %>% 
   ggplot(aes(PC1, PC2, label=response))+
-  geom_text(parse=TRUE)+
-  xlab("1st Principal component (72.2%)")+
-  ylab("2nd Principal component (9.7%)")+
+  geom_point(shape=1)+
+  geom_text_repel(parse=TRUE)+
+  xlab("1st Principal component (33.8%)")+
+  ylab("2nd Principal component (26.1%)")+
   scale_x_continuous(expand = expansion(mult = c(0.15, 0.15)))+
   scale_y_continuous(expand = expansion(mult = c(0.15, 0.15)))
 
@@ -263,7 +273,7 @@ ggsave(paste0(getwd(), "/manuscript/figures/figure_6.png"), figure_6, units = "m
 
 #Supplementary figure S1
 #Benchmark of learners
-model_bmr <- readRDS(paste0(getwd(), "/data/model_bmr_110122.rds"))
+model_bmr <- readRDS(paste0(getwd(), "/data/model_bmr_210122.rds"))
 
 model_aggr_df <- lapply(model_bmr, \(x){x$aggr}) %>% 
   bind_rows(.id="response")
@@ -284,9 +294,16 @@ model_aggr_df_clean <- model_aggr_df %>%
          variable_label = factor(variable_label, levels = c("R^{2}", "RMSE", "MAE"))) %>% 
   left_join(model_labels_df)
 
+model_aggr_df_best <- model_aggr_df_clean %>% 
+  group_by(label_no_unit, variable_label) %>% 
+  mutate(value = ifelse(variable == "rsq", value*-1, value)) %>% 
+  summarise(label = label[which.min(value)], value_rank = value_rank[which.min(value)], value = min(value)) %>% 
+  mutate(value = ifelse(variable_label == "R^{2}", value*-1, value))
+
 figure_s1 <- model_aggr_df_clean %>% 
   ggplot(aes(reorder(label, value_rank), value))+
   geom_col(col="black", fill="white")+
+  geom_col(data = model_aggr_df_best, fill="grey", color="black")+
   coord_flip(ylim=c(0, 0.70))+
   geom_hline(yintercept = 0, linetype=3)+
   facet_grid(label_no_unit~variable_label, scales = "free", labeller = label_parsed)+
