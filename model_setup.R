@@ -10,12 +10,12 @@ data_test <- data_preproc$test
 data_recipe <- data_preproc$data_recipe
 
 #Define resample for inner and outer loops
-cv_outer = makeResampleDesc("RepCV", reps=6, folds=5)
-#cv_outer = makeResampleDesc("CV", iters = 5)
+cv_rep_outer = makeResampleDesc("RepCV", reps=6, folds=5)
 cv_inner = makeResampleDesc("CV", iters = 4)
 
-#Tune method
+#Tune methods
 tune_random = makeTuneControlRandom(budget = 30)
+tune_random_final = makeTuneControlRandom(budget = 100)
 
 #Measures to report
 regr_measures = list(rmse, rsq, mae, timeboth)

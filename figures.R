@@ -41,6 +41,29 @@ table_2
 
 write_csv(table_2, paste0(getwd(), "/manuscript/figures/table_2.csv"))
 
+#Table 3
+#Table with summary of cross-validation statistics from using water quality predictions as features
+preds_as_feats <- readRDS(paste0(getwd(), "/data/", "predictions_as_features_results.rds"))
+
+table_3 <- preds_as_feats %>% 
+  bind_rows(.id = "variable") %>% 
+  select(-iter, -timeboth) %>% 
+  gather(score, value, rmse, rsq, mae) %>% 
+  group_by(variable, score) %>% 
+  summarise(mean = mean(value), sd = sd(value)) %>% 
+  ungroup() %>% 
+  mutate(value_format = paste0(round(mean, 3), " (±", round(sd, 3), ")")) %>% 
+  left_join(labels_df) %>% 
+  select(label_table, score, value_format) %>% 
+  spread(score, value_format) %>% 
+  arrange(label_table) %>% 
+  rename(RMSE = rmse, MAE = mae, R2 = rsq) %>% 
+  select(label_table, RMSE, MAE, R2)
+
+table_3
+
+write_csv(table_3, paste0(getwd(), "/manuscript/figures/table_3.csv"))
+
 #Figure 1 
 #Map showing Denmark and sites
 dk_border <- st_read(dsn = gis_database, layer = "dk_border") 

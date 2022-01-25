@@ -5,7 +5,6 @@
 source("model_setup.R")
 
 #Use best model found in model selectin and increase tuning budget for final training
-tune_random_final = makeTuneControlRandom(budget = 100)
 lrn.ranger_final = makeTuneWrapper(makeLearner("regr.ranger", num.threads=5), resampling = cv_inner, par.set = ps.randomforest, control = tune_random_final) 
 lrn.svm_final = makeTuneWrapper("regr.svm", resampling = cv_inner, par.set = ps.svm, control = tune_random)
 

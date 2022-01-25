@@ -23,7 +23,7 @@ for(i in response_vars){
   
   benchmark_regr = benchmark(learners = lrn.list,
                              tasks = task_train,
-                             resamplings = cv_outer,
+                             resamplings = cv_rep_outer,
                              measures = regr_measures,
                              models = FALSE,
                              keep.pred = FALSE)
