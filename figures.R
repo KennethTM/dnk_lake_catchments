@@ -208,14 +208,12 @@ importance_cleaned_label <- importance_cleaned %>%
   mutate(level_abbrev = str_sub(Level, end = 1),
          label_join = paste0(Variable, " (", level_abbrev, ifelse(is.na(Distance), "", Distance), ")"))
 
-#features_top_20 <- factor(reorder(importance_cleaned_label$label_join, importance_cleaned_label$importance_normalized, FUN=max))[1:20]
-
 figure_4 <- importance_cleaned_label %>% 
-  #filter(label_join %in% features_top_20) %>% 
   rename(Importance = importance_normalized) %>% 
   ggplot(aes(x = label_no_unit, y=factor(reorder(label_join, Importance)), fill=Importance))+
   geom_tile()+
-  scale_x_discrete(expand = c(0,0), position = "top", labels = parse(text = levels(importance_cleaned_label$label_no_unit)))+
+  scale_x_discrete(expand = c(0,0), position = "top", 
+                   labels = parse(text = levels(importance_cleaned_label$label_no_unit)))+
   scale_fill_gradientn(colours = brewer.pal(9, "YlOrRd"))+
   theme(legend.position = "bottom", legend.direction = "horizontal")+
   guides(fill=guide_colorbar(title.position = "bottom", title.hjust = 0.5, barwidth = unit(100, "mm"), ticks=FALSE))+
@@ -280,7 +278,6 @@ summary(pca_res)
 
 pca_df <- data.frame(response = importance_wide$label_no_unit, PC1 = pca_res$x[,1], PC2 = pca_res$x[,2])
 
-library(ggrepel)
 figure_6 <- pca_df %>% 
   ggplot(aes(PC1, PC2, label=response))+
   geom_point(shape=1)+
@@ -364,22 +361,14 @@ ggsave(paste0(getwd(), "/manuscript/figures/figure_s2.png"), figure_s2, units = 
 
 #Supplementary table S1
 #Overview of predictor variables
-all_features_join <- response_df %>% 
-  left_join(all_features$df_other) %>% 
-  left_join(all_features$df_catch) %>% 
-  left_join(all_features$df_buffer) %>% 
-  select(-lake_id, -basin_id, -catch_id, -gml_id) %>% 
-  select(-chl_a, -color, -ph, -tn, -tp, -secchi, -pco2, -alk)
+table_s1 <- feature_labels %>% 
+  mutate(`Aggregation level` = ifelse(is.na(Distance), Level, paste0(Level, " (", Distance, ")")),
+         `Included in modeling` = ifelse(variable %in% names(importance_wide)[-1], "Yes", "No")) %>% 
+  select(Variable, Unit, `Aggregation level`, `Aggregation summary` = Summary, `Included in modeling`)
 
-table_s1_data <- all_features_join %>% 
-  gather(variable, value) %>% 
-  group_by(variable) %>% 
-  na.omit() %>% 
-  summarise(min = min(value), q25 = quantile(value, 0.25), median = median(value), 
-            mean = mean(value), q75 = quantile(value, 0.75), max = max(value)) %>% 
-  arrange(variable)
+table_s1
 
-write_csv(table_s1_data, paste0(getwd(), "/manuscript/figures/table_s1.csv"))
+write_csv(table_s1, paste0(getwd(), "/manuscript/figures/table_s1.csv"))
 
 #Supplementary table S2
 #(in manuscript)
