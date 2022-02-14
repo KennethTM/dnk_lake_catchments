@@ -252,8 +252,8 @@ ale_df_labels <- ale_df_top_4 %>%
 figure_5 <- ale_df_top_4 %>% 
   ggplot(aes(.borders, .value, col=rank))+
   geom_line()+
-  geom_text(data = ale_df_labels, aes(label = label_join), hjust=0, show.legend = FALSE)+ 
-  facet_wrap(label_unit~., scales="free", ncol=2, labeller = label_parsed)+
+  geom_text(data = ale_df_labels, aes(label = label_join), hjust=0.5, show.legend = FALSE, size = 3)+ 
+  facet_wrap(label_long_no_unit~., scales="free", ncol=2, labeller = label_parsed)+
   scale_color_manual(values = rev(brewer.pal(9, "YlOrRd"))[c(1, 3, 5, 6)])+
   ylab(expression("Relative response (log"[10]~scale*")"))+
   xlab("Standardized values (unit standard deviation)")+
