@@ -264,7 +264,7 @@ figure_5 <- ale_df_top_4 %>%
 
 figure_5
 
-ggsave(paste0(getwd(), "/manuscript/figures/figure_5.png"), figure_5, units = "mm", width = 174, height = 200)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_5_raw.pdf"), figure_5, units = "mm", width = 174, height = 200)
 
 #Figure 6
 #Dimensionality reduction of the response variables based on variable importance
@@ -276,7 +276,6 @@ importance_wide <- importance_cleaned %>%
 pca_res <- prcomp(importance_wide[,-1], scale. = TRUE, center = TRUE)
 summary(pca_res)
 
-pca_df <- data.frame(response = importance_wide$label_no_unit, PC1 = pca_res$x[,1], PC2 = pca_res$x[,2])
 
 figure_6 <- pca_df %>% 
   ggplot(aes(PC1, PC2, label=response))+
@@ -290,6 +289,12 @@ figure_6 <- pca_df %>%
 figure_6
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_6.png"), figure_6, units = "mm", width = 84, height = 84)
+
+# library(plot3D)
+# pca_df2 <- data.frame(response = importance_wide$label_no_unit, PC1 = pca_res$x[,1], PC2 = pca_res$x[,2], PC3 = pca_res$x[,3])
+# text3D(x=pca_df2$PC1, y=pca_df2$PC2, z=pca_df2$PC3, xlab="PC1", ylab="PC2", zlab="PC3",
+#        labels = c("Alkalinity", expression(Chlorophyll~italic(a)), "Color", expression(pCO[2]), "pH", "Secchi depth", "Total nitrogen", "Total phophorus"),
+#        phi=30, theta = 195)
 
 #Supplementary figure S1
 #Benchmark of learners
