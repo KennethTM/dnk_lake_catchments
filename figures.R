@@ -89,6 +89,8 @@ figure_1 <- ggplot()+
   scale_x_continuous(breaks = seq(8, 15, 1), labels = paste0(seq(8, 15, 1),'°E')) +
   scale_y_continuous(breaks = seq(54.5, 57.5, 0.5), labels = paste0(seq(54.5, 57.5, 0.5),'°N'))+
   theme(legend.position = c(0.8, 0.85), legend.direction = "horizontal")+
+  xlab("Longitude")+
+  ylab("Latitude")+
   guides(color=guide_colorbar(title = expression("Alkalinity (meq."~L^{-1}*")"), title.position = "top", barwidth = unit(35, "mm"), ticks=FALSE))
 
 figure_1
