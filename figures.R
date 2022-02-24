@@ -278,25 +278,27 @@ importance_wide <- importance_cleaned %>%
 pca_res <- prcomp(importance_wide[,-1], scale. = TRUE, center = TRUE)
 summary(pca_res)
 
+pca_df <- data.frame(response = importance_wide$label_no_unit, PC1 = pca_res$x[,1], PC2 = pca_res$x[,2], PC3 = pca_res$x[,3])
 
-figure_6 <- pca_df %>% 
-  ggplot(aes(PC1, PC2, label=response))+
-  geom_point(shape=1)+
-  geom_text_repel(parse=TRUE)+
-  xlab("1st Principal component (33.8%)")+
-  ylab("2nd Principal component (26.1%)")+
-  scale_x_continuous(expand = expansion(mult = c(0.15, 0.15)))+
-  scale_y_continuous(expand = expansion(mult = c(0.15, 0.15)))
+library(plot3D)
+svg(paste0(getwd(), "/manuscript/figures/figure_6.svg"))
+text3D(x=pca_df$PC1, y=pca_df$PC2, z=pca_df$PC3, xlab="1st PC (33.8%)", ylab="2nd PC (26.1%)", zlab="3rd PC (15.8%)",
+       labels = c("Alkalinity", expression(Chl.~italic(a)), "Color", expression(pCO[2]), "pH", "Secchi", "TN", "TP"),
+       phi=22, theta = 135+45+45, bty="b")
+dev.off()
 
-figure_6
+# figure_6 <- pca_df %>% 
+#   ggplot(aes(PC1, PC2, label=response))+
+#   geom_point(shape=1)+
+#   geom_text_repel(parse=TRUE)+
+#   xlab("1st Principal component (33.8%)")+
+#   ylab("2nd Principal component (26.1%)")+
+#   scale_x_continuous(expand = expansion(mult = c(0.15, 0.15)))+
+#   scale_y_continuous(expand = expansion(mult = c(0.15, 0.15)))
+# 
+# figure_6
+#ggsave(paste0(getwd(), "/manuscript/figures/figure_6.png"), figure_6, units = "mm", width = 84, height = 84)
 
-ggsave(paste0(getwd(), "/manuscript/figures/figure_6.png"), figure_6, units = "mm", width = 84, height = 84)
-
-# library(plot3D)
-# pca_df2 <- data.frame(response = importance_wide$label_no_unit, PC1 = pca_res$x[,1], PC2 = pca_res$x[,2], PC3 = pca_res$x[,3])
-# text3D(x=pca_df2$PC1, y=pca_df2$PC2, z=pca_df2$PC3, xlab="PC1", ylab="PC2", zlab="PC3",
-#        labels = c("Alkalinity", expression(Chlorophyll~italic(a)), "Color", expression(pCO[2]), "pH", "Secchi depth", "Total nitrogen", "Total phophorus"),
-#        phi=30, theta = 195)
 
 #Supplementary figure S1
 #Benchmark of learners

@@ -40,6 +40,5 @@ catch_to_lake_area <- st_drop_geometry(catch_area) %>%
 mean(catch_to_lake_area$lake_catch_prop)
 median(catch_to_lake_area$lake_catch_prop)
 
-
-#all_predict <- read_csv(paste0(getwd(), "/data/", "all_predict.csv"))
-#summary(all_predict)
+all_predict <- read_csv(paste0(getwd(), "/data/", "all_predict.csv"))
+summary(all_predict)
