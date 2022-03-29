@@ -40,6 +40,4 @@ for(i in response_vars){
   
 }
 
-saveRDS(bmr_result_list, paste0(getwd(), "/data/", "model_bmr.rds"))
-
-#getParamSet("regr.nnet")
+saveRDS(bmr_result_list, paste0(getwd(), "/data/", "model_benchmark.rds"))

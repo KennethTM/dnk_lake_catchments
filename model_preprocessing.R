@@ -33,21 +33,21 @@ recipe_fit <- prep(preproc_recipe, training = data_train)
 data_train_preproc <- bake(recipe_fit, new_data = data_train)
 data_test_preproc <- bake(recipe_fit, new_data = data_test)
 
-# #Plot response variables
-# data_train_preproc %>%
-#   select(all_of(response_vars)) %>%
-#   gather(variable, value) %>%
-#   ggplot(aes(value))+
-#   geom_histogram() +
-#   facet_wrap(variable~., scales = "free")
-# 
+#Plot response variables
+data_train_preproc %>%
+  select(all_of(response_vars)) %>%
+  gather(variable, value) %>%
+  ggplot(aes(value))+
+  geom_histogram() +
+  facet_wrap(variable~., scales = "free")
+
 #Plot predictor variables
-# data_train_preproc %>%
-#   select(-all_of(response_vars)) %>%
-#   gather(variable, value) %>%
-#   ggplot(aes(value))+
-#   geom_histogram() +
-#   facet_wrap(variable~., scales = "free")
+data_train_preproc %>%
+  select(-all_of(response_vars)) %>%
+  gather(variable, value) %>%
+  ggplot(aes(value))+
+  geom_histogram() +
+  facet_wrap(variable~., scales = "free")
 
 #Save preprocessed data and recipe
 data_preproc <- list("train" = data_train_preproc, "test" = data_test_preproc, "data_recipe" = recipe_fit)

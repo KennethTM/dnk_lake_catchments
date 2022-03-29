@@ -4,7 +4,6 @@ import rasterio as rio
 import rasterio
 from shapely.geometry import shape
 from rasterio import features
-#import catchment_cython
 import geopandas as gp
 import os
 from collections import deque
@@ -66,16 +65,9 @@ def lake_catchment_delin(grid, grid_meta, poly, lake_id, basin_id, flowdirmap):
 
   target = features.rasterize([(poly, 1)], out_shape = grid.shape, transform = grid_meta["transform"], dtype = np.uint8)
 
-  #catch = d8_catchment(target_grid = target, flowdir_grid = grid, flowdir_mapping = richdemmap, target_val = 1)
-  #catch = catchment_cython.catchment_from_d8(target, grid) #using richdem map #used for the first app. 80% of catchments
-  #catch = catchment_cython.catchment_from_d8_bfs(target, grid) 
-  #catch = catchment_from_d8_bfs(target, grid) #using richdem map
   catch = catchment_from_d8_vec(target, grid)
 
-  #catch_crop, new_meta = crop_catch(catch, grid_meta)
-
   catch_vect = features.shapes(catch, mask = (catch == 1), transform = grid_meta["transform"], connectivity=8)
-  #catch_vect = features.shapes(catch_crop, mask = (catch_crop == 1), transform = new_meta["transform"], connectivity=8)
 
   geom, _ = list(catch_vect)[0]
 
@@ -83,35 +75,6 @@ def lake_catchment_delin(grid, grid_meta, poly, lake_id, basin_id, flowdirmap):
 
   return(lake_catch_dict)
 
-'''
-def crop_catch(catch, grid_meta):
-
-  xmin, ymin, xmax, ymax = bbox_from_mask(catch)
-
-  catch_crop = catch[ymin:ymax, xmin:xmax]
-
-  crop_trans = rasterio.Affine.translation(xmin, ymin)
-
-  new_meta = grid_meta.copy()
-
-  new_trans = new_meta["transform"] * crop_trans
-
-  new_meta["width"] = catch_crop.shape[1]
-  new_meta["height"] = catch_crop.shape[0]
-  new_meta["transform"] = new_trans
-
-  return(catch_crop, new_meta)
-
-
-def bbox_from_mask(m):
-    pos = np.where(m)
-    xmin = np.min(pos[1])
-    xmax = np.max(pos[1])
-    ymin = np.min(pos[0])
-    ymax = np.max(pos[0])
-    return (xmin, ymin, xmax, ymax)
-
-'''
 
 def zero_rim(data, nodata=0):
 
@@ -156,8 +119,7 @@ def catchment_from_d8_bfs(target, flowdir):
   return(target)
 
 
-#draft for vectorized function
-
+#Vectorized function using numba
 @njit
 def catchment_from_d8_vec(target, flowdir):
 

@@ -18,12 +18,3 @@ ids = [i for i in all_ids if i not in proc_ids]
 
 pool = Pool(processes=3)
 pool.imap_unordered(basin_catchment_delin, ids)
-
-
-'''
-t0 = time.time()
-basin_catchment_delin(87)
-t1 = time.time()
-print(t1 - t0) #orig = 6.26, vec=5.6, vec_numba = 3.6, vec_numba med crop 4.0
-
-'''

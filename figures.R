@@ -302,7 +302,7 @@ dev.off()
 
 #Supplementary figure S1
 #Benchmark of learners
-model_bmr <- readRDS(paste0(getwd(), "/data/model_bmr_210122.rds"))
+model_bmr <- readRDS(paste0(getwd(), "/data/model_benchmark.rds"))
 
 model_aggr_df <- lapply(model_bmr, \(x){x$aggr}) %>% 
   bind_rows(.id="response")

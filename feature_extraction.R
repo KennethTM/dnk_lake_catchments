@@ -72,10 +72,10 @@ lake_attr <- lakes %>%
          shoreline_dist = as.numeric(st_distance(st_cast(dk_border, "MULTILINESTRING"), lakes_centroid, by_element=TRUE))) %>% 
   st_drop_geometry()
 
-# lakes_bbox_dims <- lakes %>%
-#   mutate(lake_bbox_width_m = st_dims_by_feature(GEOMETRY, mode = "width"),
-#          lake_bbox_height_m = st_dims_by_feature(GEOMETRY, mode = "height")) %>%
-#   st_drop_geometry()
+lakes_bbox_dims <- lakes %>%
+  mutate(lake_bbox_width_m = st_dims_by_feature(GEOMETRY, mode = "width"),
+         lake_bbox_height_m = st_dims_by_feature(GEOMETRY, mode = "height")) %>%
+  st_drop_geometry()
 
 catch_attr <- catch_all_no_lake %>% 
   mutate(catch_area_m2 = as.numeric(st_area(GEOMETRY)),

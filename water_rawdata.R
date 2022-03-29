@@ -158,8 +158,3 @@ lake_all_carb_mean <- lake_all_carb_interp %>%
   ungroup()
 
 saveRDS(lake_all_carb_mean, paste0(getwd(), "/data/", "response_vars.rds"))
-
-
-#do not remove negative response vals
-#catchments near german border
-#redo 1.6m dem warp til 10m (mean resample)

@@ -1,9 +1,5 @@
 source("libs_and_funcs.R")
 
-
-#CATCHMENTS NEAR GERMAN BORDER!?!?
-
-
 #Export to data_products folder
 data_products_dir <- paste0(getwd(), "/data_products/")
 
