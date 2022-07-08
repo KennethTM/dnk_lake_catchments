@@ -372,6 +372,61 @@ figure_s2
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_s2.png"), figure_s2, units = "mm", width = 129, height = 234)
 
+#Supplementary figure S3
+#Compare chl_a and tp/tn relationships
+predict_all_df <- read_csv(paste0(getwd(), "/data/", "all_predict.csv")) |> 
+  mutate(tp_log10 = log10(tp*1000), #convert mg/L to ug/L
+         tn_log10 = log10(tn*1000),
+         chl_a_log10 = log10(chl_a))
+
+figure_s3_tp <- predict_all_df |> 
+  #sample_n(1000) |>
+  ggplot(aes(x=tp_log10, y=chl_a_log10))+
+  geom_hex(bins=50)+
+  scale_fill_gradient(low = grey(0.9), high = grey(0), name="Count", limits = c(0, 2500))+
+  geom_smooth(method="lm", aes(col = "This study"), se = FALSE)+
+  geom_abline(aes(col = "OECD 1982", intercept = -0.55, slope = 0.96), show.legend = FALSE)+
+  geom_abline(aes(col = "Prarie et al. 1989", intercept = -0.39, slope = 0.87), show.legend = FALSE)+
+  geom_abline(aes(col = "Jones and Bachmann 1976", intercept = -1.09, slope = 1.46), show.legend = FALSE)+
+  geom_abline(aes(col = "Dilon and Rigler 1974", intercept = -1.13, slope = 1.58), show.legend = FALSE)+
+  geom_abline(aes(col = "Canfield 1983", intercept = -0.15, slope = 0.74), show.legend = FALSE)+
+  geom_abline(aes(col = "Quirós 1990", intercept = -1.94, slope = 1.06), show.legend = FALSE)+
+  geom_abline(aes(col = "Pridmore 1990", intercept = -1.13, slope = 1.35), show.legend = FALSE)+
+  ylab(expression(log[10]*"(Chlorophyll"~italic(a)~"["*mu*g~L^{-1}*"])"))+
+  xlab(expression(log[10]*"(Total phosphorus"~"["*mu*g~L^{-1}*"])"))+
+  scale_color_manual(values = c("This study" = brewer.pal(8, "Dark2")[1],
+                                "OECD 1982" = brewer.pal(8, "Dark2")[2],
+                                "Prarie et al. 1989" = brewer.pal(8, "Dark2")[3],
+                                "Jones and Bachmann 1976" = brewer.pal(8, "Dark2")[4],
+                                "Dilon and Rigler 1974" = brewer.pal(8, "Dark2")[5],
+                                "Canfield 1983" = brewer.pal(8, "Dark2")[6],
+                                "Quirós 1990" = brewer.pal(8, "Dark2")[7],
+                                "Pridmore 1990" = brewer.pal(8, "Dark2")[8]), name="Study")
+
+figure_s3_tn <- predict_all_df |> 
+  #sample_n(1000) |>
+  ggplot(aes(x=tn_log10, y=chl_a_log10))+
+  geom_hex(bins=50)+
+  scale_fill_gradient(low = grey(0.9), high = grey(0), name="Count", limits = c(0, 2500))+
+  geom_smooth(method="lm", aes(col = "This study"), se=FALSE)+
+  geom_abline(aes(col = "Prarie et al. 1989", intercept = -3.13, slope = 144), show.legend = FALSE)+
+  geom_abline(aes(col = "Canfield 1983", intercept = -2.99, slope = 1.38), show.legend = FALSE)+
+  geom_abline(aes(col = "Pridmore 1990", intercept = -2.56, slope = 1.22), show.legend = FALSE)+
+  ylab(expression(log[10]*"(Chlorophyll"~italic(a)~"["*mu*g~L^{-1}*"])"))+
+  xlab(expression(log[10]*"(Total nitrogen"~"["*mu*g~L^{-1}*"])"))+
+  scale_color_manual(values = c("This study" = brewer.pal(8, "Dark2")[1],
+                                "OECD 1982" = brewer.pal(8, "Dark2")[2],
+                                "Prarie et al. 1989" = brewer.pal(8, "Dark2")[3],
+                                "Jones and Bachmann 1976" = brewer.pal(8, "Dark2")[4],
+                                "Dilon and Rigler 1974" = brewer.pal(8, "Dark2")[5],
+                                "Canfield 1983" = brewer.pal(8, "Dark2")[6],
+                                "Quirós 1990" = brewer.pal(8, "Dark2")[7],
+                                "Pridmore 1990" = brewer.pal(8, "Dark2")[8]), name="Study")
+
+figure_s3 <- figure_s3_tp+figure_s3_tn+plot_annotation(tag_levels = "A")+plot_layout(ncol = 1, guides = "collect")
+
+ggsave(paste0(getwd(), "/manuscript/figures/figure_s3.png"), figure_s3, units = "mm", width = 174, height = 200)
+
 #Supplementary table S1
 #Overview of predictor variables
 table_s1 <- feature_labels %>% 
