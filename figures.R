@@ -96,6 +96,7 @@ figure_1 <- ggplot()+
 figure_1
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_1.png"), figure_1, units = "mm", width = 129, height = 100)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_1.pdf"), figure_1, units = "mm", width = 129, height = 100)
 
 #Figure 2
 #Lake and catchment area distributions
@@ -151,6 +152,7 @@ figure_2 <- figure_2_a+figure_2_b+figure_2_c+plot_annotation(tag_levels = "A")+p
 figure_2
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_2.png"), figure_2, units = "mm", width = 129, height = 190)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_2.pdf"), figure_2, units = "mm", width = 129, height = 190)
 
 #Figure 3 
 #Density distributions of predicted values
@@ -190,6 +192,7 @@ figure_3 <- predict_long %>%
 figure_3
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_3.png"), figure_3, units = "mm", width = 174, height = 200)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_3.pdf"), figure_3, units = "mm", width = 174, height = 200)
 
 #Figure 4
 #Variable importance plot
@@ -225,6 +228,7 @@ figure_4 <- importance_cleaned_label %>%
 figure_4
 
 ggsave(paste0(getwd(), "/manuscript/figures/figure_4.png"), figure_4, units = "mm", width = 174, height = 234)
+ggsave(paste0(getwd(), "/manuscript/figures/figure_4.pdf"), figure_4, units = "mm", width = 174, height = 234)
 
 #Figure 5
 #Ale plots for four most important vars

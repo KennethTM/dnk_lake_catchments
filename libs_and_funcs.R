@@ -1,12 +1,14 @@
 #Load libraries
 
 library(data.table);library(Hmisc);library(mgcv);library(seacarb)
-library(raster);library(sf);library(gdalUtils);library(tidyverse)
+library(raster);library(sf);library(tidyverse)
 library(exactextractr);library(rgrass7);library(link2GI)
 library(nngeo);library(readxl);library(lubridate);library(parallelMap)
 library(recipes);library(iml);library(mlr)
 library(rsample);library(scales);library(patchwork);library(RColorBrewer)
 library(ggrepel)
+
+#;library(gdalUtils)
 
 set.seed(9999)
 
