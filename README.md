@@ -1,8 +1,8 @@
 ## Project: dnk_lake_catchments
 
-### UNDER DEVELOPMENT
-
 Repository containing code for the analysis described in the manuscript:
+
+**DOI:** https://doi.org/10.1016/j.scitotenv.2022.158090
 
 **Title:** Predicting water quality from geospatial lake, catchment, and buffer zone characteristics in temperate lowland lakes
 

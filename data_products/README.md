@@ -1,5 +1,9 @@
 # Data and analysis products for manuscript:
 
+DOI: https://doi.org/10.1016/j.scitotenv.2022.158090
+
+Journal: Science of the Total Environment
+
 Title: Predicting water quality from geospatial lake, catchment, and buffer zone characteristics in temperate lowland lakes
 
 Authors: Kenneth Thorø Martinsen* and Kaj Sand-Jensen
@@ -10,11 +14,11 @@ Affiliations: Freshwater Biological Laboratory, Biological Institute, University
 
 ## Contents:
 
-This repository contains four files associated with the above manuscript:
+This repository contains files associated with the above manuscript:
 
-**catchments_simple.sqlite** Catchment boundaries of 180.377 lakes identified by the "gml_id" feature. Catchments are derived from a high-resolution digital elevation model (1.6 m resolution) and followingly simplified, retaining approx. 10% of the original points.
+**catchments_simple** Catchment boundaries of 180.377 lakes identified by the "gml_id" feature. Catchments are derived from a high-resolution digital elevation model (1.6 m resolution) followed by simplification, retaining approx. 10% of the original points. File available in both '.shp' and '.sqlite' formats.
 
-**lakes.sqlite** 180.378 lake polygons identified by the "gml_id" feature. 
+**lakes** 180.378 lake polygons identified by the "gml_id" feature. File available in both '.shp' and '.sqlite' formats.
 
 **predictions.csv** CSV text file containing predictions of water quality (alk/alkalinity [meq L^-1], chl_a/chlorophyll a [ug L^-1], color [mg Pt L^-1], ph/pH [pH], tn/total nitrogen [mg L^-1], tp/total phosphorus [mg L^-1], secchi/Secchi depth [m], pco2/CO2 partial pressure [uatm]) for 180.378 lakes identified by the "gml_id" feature. Estimates represents annual averages of surface water concentrations.
 
@@ -22,7 +26,7 @@ This repository contains four files associated with the above manuscript:
 
 ## Raw data
 
-Raw data sources are publicly available and cited in the main text. The lake polygons in this repository are included in the "INSPIRE - HYDROGRAFI" dataset from SDFE, Agency for Datasupply and Efficiency ("Styrelsen for Dataforsyning og Effektivisering" in Danish), downloaded October 2021. This dataset is derived from "GeoDanmark-data" ("Styrelsen for Dataforsyning og Effektivisering og Danske kommuner" in Danish). 
+Raw data sources are publicly available and cited in the main text. The lake polygons in this repository are included in the "INSPIRE - HYDROGRAFI" dataset from SDFE, Agency for Datasupply and Efficiency ("Styrelsen for Dataforsyning og Effektivisering" in Danish), downloaded October 2021. This dataset is derived from "GeoDanmark-data" ("Styrelsen for Dataforsyning og Effektivisering og Danske kommuner" in Danish):
 
 General terms:
 https://sdfe.dk/Media/637703280490685559/Vilkaar_for_brug_af_frie_geografiske_data_2021.pdf
