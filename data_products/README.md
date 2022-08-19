@@ -14,15 +14,15 @@ Affiliations: Freshwater Biological Laboratory, Biological Institute, University
 
 ## Contents:
 
-This repository contains files associated with the above manuscript:
+This repository contains files (GIS files available in both '.shp' and '.sqlite' formats in sub-folders) associated with the above manuscript:
 
-**catchments_simple** Catchment boundaries of 180.377 lakes identified by the "gml_id" feature. Catchments are derived from a high-resolution digital elevation model (1.6 m resolution) followed by simplification, retaining approx. 10% of the original points. File available in both '.shp' and '.sqlite' formats.
+*catchments_simple* Catchment boundaries of 180.377 lakes identified by the "gml_id" feature. Catchments are derived from a high-resolution digital elevation model (1.6 m resolution) followed by simplification, retaining approx. 10% of the original points.
 
-**lakes** 180.378 lake polygons identified by the "gml_id" feature. File available in both '.shp' and '.sqlite' formats.
+*lakes* 180.378 lake polygons identified by the "gml_id" feature.
 
-**predictions.csv** CSV text file containing predictions of water quality (alk/alkalinity [meq L^-1], chl_a/chlorophyll a [ug L^-1], color [mg Pt L^-1], ph/pH [pH], tn/total nitrogen [mg L^-1], tp/total phosphorus [mg L^-1], secchi/Secchi depth [m], pco2/CO2 partial pressure [uatm]) for 180.378 lakes identified by the "gml_id" feature. Estimates represents annual averages of surface water concentrations.
+*predictions.csv* CSV text file containing predictions of water quality (alk/alkalinity [meq L^-1], chl_a/chlorophyll a [ug L^-1], color [mg Pt L^-1], ph/pH [pH], tn/total nitrogen [mg L^-1], tp/total phosphorus [mg L^-1], secchi/Secchi depth [m], pco2/CO2 partial pressure [uatm]) for 180.378 lakes identified by the "gml_id" feature. Estimates represents annual averages of surface water concentrations.
 
-**models.rds** R-object file which can be read in R using the readRDS() function. The contains a nested R list object: The first level keys are "raw" or "mlr", and second level keys "alk", "chl_a", "color", "ph", "tn", "tp", "secchi", "pco2"). The list contains trained predictive models for each of the eight water quality variables, either as implemented in the MLR R-package ("mlr") or in the underlying R-packages ("raw").
+*models.rds* R-object file which can be read in R using the readRDS() function. The contains a nested R list object: The first level keys are "raw" or "mlr", and second level keys "alk", "chl_a", "color", "ph", "tn", "tp", "secchi", "pco2"). The list contains trained predictive models for each of the eight water quality variables, either as implemented in the MLR R-package ("mlr") or in the underlying R-packages ("raw").
 
 ## Raw data
 
