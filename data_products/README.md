@@ -8,7 +8,7 @@ Title: Predicting water quality from geospatial lake, catchment, and buffer zone
 
 Authors: Kenneth Thorø Martinsen* and Kaj Sand-Jensen
 
-Affiliations: Freshwater Biological Laboratory, Biological Institute, University of Copenhagen, Universitetsparken 4, 3rd floor, 2100 Copenhagen, Denmark
+Affiliations: Freshwater Biological Laboratory, Department of Biology, University of Copenhagen, Universitetsparken 4, 3rd floor, 2100 Copenhagen, Denmark
 
 *Corresponding author: Kenneth Thorø Martinsen, kenneth.martinsen@bio.ku.dk
 

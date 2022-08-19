@@ -8,7 +8,7 @@ Repository containing code for the analysis described in the manuscript:
 
 **Authors:** Kenneth Thorø Martinsen<sup>1,*</sup> and Kaj Sand-Jensen<sup>1</sup>
 
-**Affiliations:** <sup>1</sup>Freshwater Biological Laboratory, Biological Institute, University of Copenhagen, Universitetsparken 4, 3rd floor, 2100 Copenhagen, Denmark
+**Affiliations:** <sup>1</sup>Freshwater Biological Laboratory, Department of Biology, University of Copenhagen, Universitetsparken 4, 3rd floor, 2100 Copenhagen, Denmark
 
 __*Corresponding author:__ Kenneth Thorø Martinsen, kenneth.martinsen@bio.ku.dk
 
