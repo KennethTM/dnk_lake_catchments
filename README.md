@@ -11,3 +11,5 @@ Repository containing code for the analysis described in the manuscript:
 **Affiliations:** <sup>1</sup>Freshwater Biological Laboratory, Biological Institute, University of Copenhagen, Universitetsparken 4, 3rd floor, 2100 Copenhagen, Denmark
 
 __*Corresponding author:__ Kenneth Thorø Martinsen, kenneth.martinsen@bio.ku.dk
+
+**Dataset DOI:** http://doi.org/10.17894/ucph.a344db4b-3d71-4a48-8293-a17b4ccf0e9d
