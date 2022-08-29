@@ -1,6 +1,8 @@
-## Project: dnk_lake_catchments
+## *Predicting water quality from geospatial lake, catchment, and buffer zone characteristics in temperate lowland lakes*
 
-Repository containing code for the analysis described in the manuscript:
+### Project acronym: dnk_lake_catchments
+
+Repository containing code for the paper published in Science of the Total Environment (Martinsen & Sand-Jensen 2022):
 
 **DOI:** https://doi.org/10.1016/j.scitotenv.2022.158090
 
