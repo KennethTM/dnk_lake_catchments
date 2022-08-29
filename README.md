@@ -12,4 +12,4 @@ Repository containing code for the analysis described in the manuscript:
 
 __*Corresponding author:__ Kenneth Thorø Martinsen, kenneth.martinsen@bio.ku.dk
 
-**Dataset DOI:** http://doi.org/10.17894/ucph.a344db4b-3d71-4a48-8293-a17b4ccf0e9d
+**Repository DOI:** http://doi.org/10.17894/ucph.a344db4b-3d71-4a48-8293-a17b4ccf0e9d
