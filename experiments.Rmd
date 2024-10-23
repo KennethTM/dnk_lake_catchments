@@ -1,0 +1,197 @@
+---
+title: "Vandrammedirektiv tilstandsklasser"
+output: html
+---
+
+
+
+```{r, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse);library(terra);library(sf)
+library(data.table);library(exactextractr)
+library(recipes);library(mlr);library(rsample);library(parallelMap)
+
+set.seed(9999)
+
+size_cat <- c(0, 10^seq(3, 8))
+
+lakes <- st_read("data_products/sqlite_format/lakes.sqlite")|> 
+  mutate(area = as.numeric(st_area(GEOMETRY)),
+         cat = cut(area, breaks = size_cat))
+
+catchments <- st_read("data_products/sqlite_format/catchments_simple.sqlite")
+
+predictions <- read_csv("data_products/predictions.csv")
+
+features <- readRDS("data/all_features.rds")
+
+#Figure sizing. For most journals the figures should be 39 mm, 84 mm, 129 mm, or 174 mm wide and not higher than 234 mm.
+#ggplot theme
+theme_pub <- theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        axis.text = element_text(colour = "black"), 
+        panel.border = element_rect(fill = NA, colour = "black"),
+        strip.background = element_rect(fill = "white"))
+theme_set(theme_pub)
+```
+
+### Data
+
+```{r}
+# Get WFS data from VP3
+soer <- st_read("vp3e2022_vandplan3_endelig_tab/vp3e2022_soe_samlet.tab") |> 
+  st_set_crs(25832) 
+
+keep <- c("God økologisk tilstand", "Høj økologisk tilstand", 
+          "Ikke-god økologisk tilstand", 
+          "Dårlig økologisk tilstand", "Moderat økologisk tilstand", "Ringe økologisk tilstand")
+
+targets <- soer |> 
+  filter(til_oko_p %in% keep) |> 
+  #filter(til_oko_sm %in% keep) |> 
+  st_make_valid() |> 
+  #mutate(target = as.factor(til_oko_p)) |> 
+  mutate(target = as.factor(ifelse(til_oko_p %in% c("God økologisk tilstand", "Høj økologisk tilstand"), "good", "not good"))) |> 
+  select(target)
+```
+
+```{r}
+feature_subset <- left_join(features$df_other, features$df_catch) |> 
+  select(-lake_id, -basin_id, -catch_id,
+         -lake_bbox_width_m, -lake_bbox_height_m,
+         -mean.airt, -mean.precip)
+#summary(feature_subset)
+```
+
+```{r}
+targets_gml <- st_join(targets, select(lakes, gml_id), largest=TRUE) |> 
+  na.omit()
+
+centroids <- targets_gml |> 
+  st_centroid() |> 
+  st_coordinates() |> 
+  as.data.frame()
+
+data_raw <- targets_gml |> 
+  st_drop_geometry() |> 
+  bind_cols(centroids) |> 
+  left_join(feature_subset) |> 
+  select(-gml_id)
+```
+
+```{r}
+
+data_split <- initial_split(data_raw, prop = 0.75)
+data_train <- training(data_split)
+data_test <- testing(data_split)
+
+preproc_recipe <- recipe(target ~ . , data = data_raw) %>% 
+  step_nzv(all_predictors()) %>% 
+  step_sqrt(contains("mean.soil_"), contains("mean.clc_")) %>% 
+  step_YeoJohnson(all_predictors(), -contains("mean.soil_"), -contains("mean.clc_"), -ice_covered, -lake_stream_connect) %>% 
+  #step_center(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
+  #step_scale(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
+  step_corr(all_predictors(), -ice_covered, -lake_stream_connect, threshold = 0.8, method = "spearman")
+
+recipe_fit <- prep(preproc_recipe, training = data_train)
+
+data_train_preproc <- bake(recipe_fit, new_data = data_train)
+data_test_preproc <- bake(recipe_fit, new_data = data_test)
+
+```
+
+
+```{r}
+
+#Define resample for inner and outer loops
+cv_inner <- makeResampleDesc("CV", iters = 5)
+
+#Tune methods
+tune_random <- makeTuneControlRandom(budget = 50)
+
+#Measures to report
+metrics <- list(acc, f1, fnr, fpr, tnr, tpr)
+
+#Define hyperparameter search spaces for model training
+ps.randomforest <- makeParamSet(
+  makeIntegerParam("mtry", lower = 2, upper = ncol(data_test_preproc)-1), 
+  makeIntegerParam("num.trees", lower = 100, upper = 2000),
+  makeNumericParam("sample.fraction", lower = 0.3, upper = 1)
+  #makeIntegerParam("min.node.size", lower = 1, upper = 20)
+)
+
+#Define model
+lrn.ranger_final <- makeTuneWrapper(makeLearner("classif.ranger", num.threads=4), 
+                                    resampling = cv_inner, 
+                                    par.set = ps.randomforest,
+                                    control = tune_random) 
+
+train_tsk <- makeClassifTask(data=as.data.frame(data_train_preproc), target="target")
+test_tsk <- makeClassifTask(data=as.data.frame(data_test_preproc), target="target")
+
+```
+
+```{r}
+parallelStart(mode = "socket", cpus=4, mc.set.seed = TRUE, level = "mlr.tuneParams")
+model_fit <- train(lrn.ranger_final, task = train_tsk)
+parallelStop()
+  
+pred <- predict(model_fit, test_tsk)
+perf <- performance(pred, measures = metrics)
+print(perf)
+
+conf_matrix <- calculateConfusionMatrix(pred)
+print(conf_matrix)
+```
+
+
+
+
+```{r}
+# Load necessary libraries
+library(h2o)
+
+# Initialize the H2O cluster
+h2o.init()
+
+# Split the dataset into training and testing sets
+train <- as.h2o(data_train_preproc)
+test <- as.h2o(data_test_preproc)
+```
+
+```{r}
+
+# Train an AutoML model for binary classification
+aml <- h2o.automl(
+  y = "target",
+  training_frame = train,
+  validation_frame = test,
+  max_runtime_secs = 600,
+  seed = 1234
+)
+
+```
+
+```{r}
+# Make predictions on the test set
+pred <- h2o.predict(aml@leader, test)
+
+# Generate a confusion matrix
+confusion_matrix <- h2o.confusionMatrix(aml@leader, test)
+print(confusion_matrix)
+
+# Generate classification metrics
+perf <- h2o.performance(aml@leader, test)
+print(perf)
+
+
+```
+
+```{r}
+# Shutdown H2O cluster
+h2o.shutdown(prompt = FALSE)
+```
+
