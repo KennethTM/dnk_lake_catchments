@@ -5,3 +5,14 @@
 data/
 rawdata/
 __pycache__/
+.vscode/
+*.zip
+grass_database/
+manuscript/
+old/
+richdem_apps/*.exe
+data_products/shapefile_format
+data_products/sqlite_format
+data_products/models.rds
+data_products/predictions.csv
+vp3/
