@@ -27,6 +27,10 @@ predictions <- read_csv("data_products/predictions.csv")
 
 features <- readRDS("data/all_features.rds")
 
+features_extra <- readRDS("vp3/features.rds")
+
+predicted_depths <- readRDS("../dk_lake_water/predicted_depths.rds")
+
 #Figure sizing. For most journals the figures should be 39 mm, 84 mm, 129 mm, or 174 mm wide and not higher than 234 mm.
 #ggplot theme
 theme_pub <- theme_bw() + 
@@ -41,9 +45,33 @@ theme_set(theme_pub)
 ### Data
 
 ```{r}
-# Get WFS data from VP3
-soer <- st_read("vp3e2022_vandplan3_endelig_tab/vp3e2022_soe_samlet.tab") |> 
+# VP3 data
+soer <- st_read("vp3/vp3e2022_vandplan3_endelig_tab/vp3e2022_soe_samlet.tab") |> 
   st_set_crs(25832) 
+
+renseanlaeg <- st_read("vp3/vp3e2022_vandplan3_endelig_tab/vp3e2022_punkt_rens_saml.tab") |> 
+  st_set_crs(25832)
+
+spredtbebyg <- st_read("vp3/vp3e2022_vandplan3_endelig_tab/vp3e2022_punkt_spredt_saml.tab") |> 
+  st_set_crs(25832)
+```
+
+
+```{r}
+catchments_spredbebyg <- data.frame(gml_id = catchments$gml_id, spredtbebyg = lengths(st_intersects(catchments, spredtbebyg)))
+
+catchments_renseanlaeg <- st_join(renseanlaeg, catchments) |> 
+  filter(!is.na(gml_id)) |> 
+  st_drop_geometry() |> 
+  group_by(gml_id) |> 
+  summarise(n_renseanlaeg = n(), sum_udl_tp_sta = sum(udl_tp_sta), sum_udl_tp_ba = sum(udl_tp_ba)) |> 
+  right_join(st_drop_geometry(catchments)) |> 
+  mutate_if(is.numeric, ~ ifelse(is.na(.x), 0, .x))
+```
+
+
+```{r}
+# Get WFS data from VP3
 
 keep <- c("God økologisk tilstand", "Høj økologisk tilstand", 
           "Ikke-god økologisk tilstand", 
@@ -53,16 +81,38 @@ targets <- soer |>
   filter(til_oko_p %in% keep) |> 
   #filter(til_oko_sm %in% keep) |> 
   st_make_valid() |> 
-  #mutate(target = as.factor(til_oko_p)) |> 
-  mutate(target = as.factor(ifelse(til_oko_p %in% c("God økologisk tilstand", "Høj økologisk tilstand"), "good", "not good"))) |> 
+  mutate(target = as.factor(til_oko_p)) |> 
+  mutate(target = as.factor(ifelse(target %in% c("God økologisk tilstand", "Høj økologisk tilstand"), "good", "not good"))) |> 
   select(target)
 ```
 
 ```{r}
-feature_subset <- left_join(features$df_other, features$df_catch) |> 
+centroids <- lakes |> 
+  st_centroid() |> 
+  st_coordinates() |> 
+  as.data.frame()
+
+features_other <- features$df_other |> 
   select(-lake_id, -basin_id, -catch_id,
-         -lake_bbox_width_m, -lake_bbox_height_m,
-         -mean.airt, -mean.precip)
+         -lake_bbox_width_m, -lake_bbox_height_m) |> 
+  bind_cols(centroids)
+
+features_catch <- features$df_catch |> 
+  select(-mean.airt, -mean.precip, 
+         -lake_id, -basin_id, -catch_id,
+         -contains("mean.clc_"))
+
+features_buffer <- features$df_buffer |> 
+  select(-lake_id, -basin_id)
+
+features_all <- features_other |> 
+  left_join(features_catch) |> 
+  left_join(features_extra) |> 
+  left_join(catchments_renseanlaeg) |> 
+  left_join(catchments_spredbebyg) |> 
+  left_join(predicted_depths) |> 
+  left_join(features_buffer)
+
 #summary(feature_subset)
 ```
 
@@ -70,30 +120,27 @@ feature_subset <- left_join(features$df_other, features$df_catch) |>
 targets_gml <- st_join(targets, select(lakes, gml_id), largest=TRUE) |> 
   na.omit()
 
-centroids <- targets_gml |> 
-  st_centroid() |> 
-  st_coordinates() |> 
-  as.data.frame()
-
 data_raw <- targets_gml |> 
   st_drop_geometry() |> 
-  bind_cols(centroids) |> 
-  left_join(feature_subset) |> 
-  select(-gml_id)
+  left_join(features_all) |> 
+  select(-gml_id) |> 
+  mutate_at(vars(contains("mean.bsm"), contains("mean.soil")), ~ .x*catch_area_m2)
 ```
 
 ```{r}
 
-data_split <- initial_split(data_raw, prop = 0.75)
+data_split <- initial_split(data_raw, prop = 0.75, strata = "target")
 data_train <- training(data_split)
 data_test <- testing(data_split)
 
 preproc_recipe <- recipe(target ~ . , data = data_raw) %>% 
   step_nzv(all_predictors()) %>% 
-  step_sqrt(contains("mean.soil_"), contains("mean.clc_")) %>% 
-  step_YeoJohnson(all_predictors(), -contains("mean.soil_"), -contains("mean.clc_"), -ice_covered, -lake_stream_connect) %>% 
-  #step_center(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
-  #step_scale(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
+  step_impute_median(all_predictors()) |> 
+  #step_YeoJohnson(all_predictors(), -contains("mean.soil_"), -contains("mean.bsm_"), -ice_covered, -lake_stream_connect) %>% 
+  step_center(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
+  step_scale(all_predictors(), -ice_covered, -lake_stream_connect) %>% 
+  step_pca(contains("mean.soil_"), threshold = 0.95, prefix = "PCA_SOIL") |> 
+  step_pca(contains("mean.bsm_"), threshold = 0.95, prefix = "PCA_BSM") |> 
   step_corr(all_predictors(), -ice_covered, -lake_stream_connect, threshold = 0.8, method = "spearman")
 
 recipe_fit <- prep(preproc_recipe, training = data_train)
@@ -107,7 +154,7 @@ data_test_preproc <- bake(recipe_fit, new_data = data_test)
 ```{r}
 
 #Define resample for inner and outer loops
-cv_inner <- makeResampleDesc("CV", iters = 5)
+cv_inner <- makeResampleDesc("CV", iters = 4, stratify = TRUE)
 
 #Tune methods
 tune_random <- makeTuneControlRandom(budget = 50)
@@ -118,14 +165,16 @@ metrics <- list(acc, f1, fnr, fpr, tnr, tpr)
 #Define hyperparameter search spaces for model training
 ps.randomforest <- makeParamSet(
   makeIntegerParam("mtry", lower = 2, upper = ncol(data_test_preproc)-1), 
-  makeIntegerParam("num.trees", lower = 100, upper = 2000),
-  makeNumericParam("sample.fraction", lower = 0.3, upper = 1)
-  #makeIntegerParam("min.node.size", lower = 1, upper = 20)
+  makeIntegerParam("num.trees", lower = 100, upper = 3000),
+  makeNumericParam("sample.fraction", lower = 0.2, upper = 1),
+  makeIntegerParam("min.node.size", lower = 1, upper = 15),
+  makeLogicalParam("replace", default = TRUE)
 )
 
 #Define model
-lrn.ranger_final <- makeTuneWrapper(makeLearner("classif.ranger", num.threads=4), 
+lrn.ranger_final <- makeTuneWrapper(makeLearner("classif.ranger", num.threads=4, predict.type = "prob"), 
                                     resampling = cv_inner, 
+                                    measures = auc,
                                     par.set = ps.randomforest,
                                     control = tune_random) 
 
@@ -138,13 +187,18 @@ test_tsk <- makeClassifTask(data=as.data.frame(data_test_preproc), target="targe
 parallelStart(mode = "socket", cpus=4, mc.set.seed = TRUE, level = "mlr.tuneParams")
 model_fit <- train(lrn.ranger_final, task = train_tsk)
 parallelStop()
-  
+```
+
+
+```{r}
 pred <- predict(model_fit, test_tsk)
 perf <- performance(pred, measures = metrics)
 print(perf)
 
 conf_matrix <- calculateConfusionMatrix(pred)
 print(conf_matrix)
+
+#difficult to distinguish good from not good, but easy the other way around
 ```
 
 
@@ -170,6 +224,7 @@ aml <- h2o.automl(
   training_frame = train,
   validation_frame = test,
   max_runtime_secs = 600,
+  nfolds=5,
   seed = 1234
 )
 

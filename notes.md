@@ -23,7 +23,7 @@ Preprocessing:
 
 Modeling:
 * Log training errors
-* Increa reguralization
+* Increase reguralization
 * Xgboost
 * Other metrics, i.e. ROC AUC
 * Basins embeddings using neural networks
@@ -36,7 +36,7 @@ Ideas:
   - Use overall score
   - For P, N or overall chemistry score
   Using neural nets:
-  - Use all scores simultenously
+  - Use all scores simultaneously
   Other input features:
   - Use vision models on catchment and/or lake imagery (enables visual interpretability processing) (could be used for streams as well)
   - Fuse vision input and catchment features
